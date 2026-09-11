@@ -1,24 +1,26 @@
-//
-//  ContentView.swift
-//  optiTAG
-//
-//  Created by Paul Weng on 5/8/26.
-//
-
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+    @State private var isMenuOpen = false
+    @State private var selectedTab = "home"
 
-#Preview {
-    ContentView()
+    var body: some View {
+        ZStack(alignment: .leading) {
+            MainView(isMenuOpen: $isMenuOpen)
+
+            if isMenuOpen {
+                Color.black.opacity(0.25)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.easeInOut) { isMenuOpen = false }
+                    }
+
+                SideMenuView(selectedTab: $selectedTab, isMenuOpen: $isMenuOpen)
+                    .frame(width: 260)
+                    .transition(.move(edge: .leading))
+                    .ignoresSafeArea()
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: isMenuOpen)
+    }
 }

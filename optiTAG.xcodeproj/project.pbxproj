@@ -6,17 +6,42 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXFileReference section */
-		C077651A2FADD45800BD8F6F /* optiTAG.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = optiTAG.app; sourceTree = BUILT_PRODUCTS_DIR; };
-/* End PBXFileReference section */
+/* Begin PBXBuildFile section */
+		C03712322FAE024600CD97D7 /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03712312FAE024600CD97D7 /* Person.swift */; };
+		C03712342FAE024600CD97D7 /* RecognitionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03712332FAE024600CD97D7 /* RecognitionLog.swift */; };
+		C03712362FAE024600CD97D7 /* OptiTagDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03712352FAE024600CD97D7 /* OptiTagDatabase.swift */; };
+		C03712382FAE024600CD97D7 /* MainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03712372FAE024600CD97D7 /* MainViewModel.swift */; };
+		C03712422FAE024600CD97D7 /* BLEProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03712402FAE024600CD97D7 /* BLEProtocol.swift */; };
+		C03712432FAE024600CD97D7 /* BLEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03712412FAE024600CD97D7 /* BLEManager.swift */; };
+		C07CAEAB2FAF2C5200701FF3 /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07CAEA62FAF2C5200701FF3 /* CameraPreviewView.swift */; };
+		C07CAEAC2FAF2C5200701FF3 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07CAEA72FAF2C5200701FF3 /* ContentView.swift */; };
+		C07CAEAD2FAF2C5200701FF3 /* optiTAGApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07CAEA82FAF2C5200701FF3 /* optiTAGApp.swift */; };
+		C07CAEAE2FAF2C5200701FF3 /* RcognitionResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07CAEA92FAF2C5200701FF3 /* RcognitionResultView.swift */; };
+		C07CAEAF2FAF2C5200701FF3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C07CAEA52FAF2C5200701FF3 /* Assets.xcassets */; };
+		C07CAEB22FAF2C8900701FF3 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07CAEB12FAF2C8500701FF3 /* MainView.swift */; };
+		C07CAEB42FAF2CE400701FF3 /* SIdeManuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07CAEB32FAF2CDB00701FF3 /* SIdeManuView.swift */; };
+		C07CAEB62FAF2CF100701FF3 /* ManuRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07CAEB52FAF2CEB00701FF3 /* ManuRow.swift */; };
+		C07CAEB82FAF2EDC00701FF3 /* ColorHex.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07CAEB72FAF2ED300701FF3 /* ColorHex.swift */; };
+/* End PBXBuildFile section */
 
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		C077651C2FADD45800BD8F6F /* optiTAG */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = optiTAG;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
+/* Begin PBXFileReference section */
+		C03712312FAE024600CD97D7 /* Person.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Person.swift; sourceTree = "<group>"; };
+		C03712332FAE024600CD97D7 /* RecognitionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognitionLog.swift; sourceTree = "<group>"; };
+		C03712352FAE024600CD97D7 /* OptiTagDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptiTagDatabase.swift; sourceTree = "<group>"; };
+		C03712372FAE024600CD97D7 /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
+		C03712402FAE024600CD97D7 /* BLEProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEProtocol.swift; sourceTree = "<group>"; };
+		C03712412FAE024600CD97D7 /* BLEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEManager.swift; sourceTree = "<group>"; };
+		C077651A2FADD45800BD8F6F /* optiTAG.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = optiTAG.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C07CAEA52FAF2C5200701FF3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C07CAEA62FAF2C5200701FF3 /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
+		C07CAEA72FAF2C5200701FF3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		C07CAEA82FAF2C5200701FF3 /* optiTAGApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = optiTAGApp.swift; sourceTree = "<group>"; };
+		C07CAEA92FAF2C5200701FF3 /* RcognitionResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RcognitionResultView.swift; sourceTree = "<group>"; };
+		C07CAEB12FAF2C8500701FF3 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		C07CAEB32FAF2CDB00701FF3 /* SIdeManuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SIdeManuView.swift; sourceTree = "<group>"; };
+		C07CAEB52FAF2CEB00701FF3 /* ManuRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManuRow.swift; sourceTree = "<group>"; };
+		C07CAEB72FAF2ED300701FF3 /* ColorHex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorHex.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		C07765172FADD45800BD8F6F /* Frameworks */ = {
@@ -29,10 +54,44 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		C03712302FAE023300CD97D7 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				C03712312FAE024600CD97D7 /* Person.swift */,
+				C03712332FAE024600CD97D7 /* RecognitionLog.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C03712392FAE024600CD97D7 /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				C03712352FAE024600CD97D7 /* OptiTagDatabase.swift */,
+			);
+			path = Database;
+			sourceTree = "<group>";
+		};
+		C037123A2FAE024600CD97D7 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				C03712372FAE024600CD97D7 /* MainViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		C03712442FAE024600CD97D7 /* BLE */ = {
+			isa = PBXGroup;
+			children = (
+				C03712402FAE024600CD97D7 /* BLEProtocol.swift */,
+				C03712412FAE024600CD97D7 /* BLEManager.swift */,
+			);
+			path = BLE;
+			sourceTree = "<group>";
+		};
 		C07765112FADD45700BD8F6F = {
 			isa = PBXGroup;
 			children = (
-				C077651C2FADD45800BD8F6F /* optiTAG */,
+				C07CAEAA2FAF2C5200701FF3 /* optiTAG */,
 				C077651B2FADD45800BD8F6F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +102,34 @@
 				C077651A2FADD45800BD8F6F /* optiTAG.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		C07CAEAA2FAF2C5200701FF3 /* optiTAG */ = {
+			isa = PBXGroup;
+			children = (
+				C07CAEB02FAF2C5D00701FF3 /* Views */,
+				C03712442FAE024600CD97D7 /* BLE */,
+				C037123A2FAE024600CD97D7 /* ViewModels */,
+				C03712392FAE024600CD97D7 /* Database */,
+				C07CAEA52FAF2C5200701FF3 /* Assets.xcassets */,
+				C07CAEA62FAF2C5200701FF3 /* CameraPreviewView.swift */,
+				C07CAEA72FAF2C5200701FF3 /* ContentView.swift */,
+				C07CAEA82FAF2C5200701FF3 /* optiTAGApp.swift */,
+				C07CAEA92FAF2C5200701FF3 /* RcognitionResultView.swift */,
+				C03712302FAE023300CD97D7 /* Models */,
+			);
+			path = optiTAG;
+			sourceTree = "<group>";
+		};
+		C07CAEB02FAF2C5D00701FF3 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				C07CAEB72FAF2ED300701FF3 /* ColorHex.swift */,
+				C07CAEB52FAF2CEB00701FF3 /* ManuRow.swift */,
+				C07CAEB32FAF2CDB00701FF3 /* SIdeManuView.swift */,
+				C07CAEB12FAF2C8500701FF3 /* MainView.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -59,9 +146,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				C077651C2FADD45800BD8F6F /* optiTAG */,
 			);
 			name = optiTAG;
 			packageProductDependencies = (
@@ -109,6 +193,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C07CAEAF2FAF2C5200701FF3 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,6 +204,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C03712342FAE024600CD97D7 /* RecognitionLog.swift in Sources */,
+				C07CAEB42FAF2CE400701FF3 /* SIdeManuView.swift in Sources */,
+				C07CAEAB2FAF2C5200701FF3 /* CameraPreviewView.swift in Sources */,
+				C07CAEB82FAF2EDC00701FF3 /* ColorHex.swift in Sources */,
+				C03712362FAE024600CD97D7 /* OptiTagDatabase.swift in Sources */,
+				C03712422FAE024600CD97D7 /* BLEProtocol.swift in Sources */,
+				C07CAEAC2FAF2C5200701FF3 /* ContentView.swift in Sources */,
+				C07CAEAD2FAF2C5200701FF3 /* optiTAGApp.swift in Sources */,
+				C03712382FAE024600CD97D7 /* MainViewModel.swift in Sources */,
+				C03712432FAE024600CD97D7 /* BLEManager.swift in Sources */,
+				C07CAEB62FAF2CF100701FF3 /* ManuRow.swift in Sources */,
+				C03712322FAE024600CD97D7 /* Person.swift in Sources */,
+				C07CAEB22FAF2C8900701FF3 /* MainView.swift in Sources */,
+				C07CAEAE2FAF2C5200701FF3 /* RcognitionResultView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,11 +350,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6H4QVBVHX6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "optiTAG 需要透過 BLE 連線 ESP32-S3，接收裁切後的人臉影像。";
+				INFOPLIST_KEY_NSCameraUsageDescription = "optiTAG 需要使用相機進行人物掃描與辨識。";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -263,6 +365,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "-lsqlite3";
 				PRODUCT_BUNDLE_IDENTIFIER = com.paulweng.optiTAG;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -282,11 +385,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6H4QVBVHX6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "optiTAG 需要透過 BLE 連線 ESP32-S3，接收裁切後的人臉影像。";
+				INFOPLIST_KEY_NSCameraUsageDescription = "optiTAG 需要使用相機進行人物掃描與辨識。";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -294,6 +400,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "-lsqlite3";
 				PRODUCT_BUNDLE_IDENTIFIER = com.paulweng.optiTAG;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
