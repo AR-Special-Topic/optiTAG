@@ -1,6 +1,7 @@
 """SDK-level callable tests; install requirements.txt before running."""
 import base64
 import inspect
+import json
 import os
 from types import SimpleNamespace as Obj
 import unittest
@@ -64,6 +65,27 @@ class CallableTests(unittest.TestCase):
                     self.call()
                 self.assertEqual(failure.exception.code, code)
                 self.assertNotIn("private detail", failure.exception.message)
+
+    def test_internal_failure_diagnostics_cover_each_stage_without_private_data(self):
+        for stage in ("config", "client", "recognize", "segments"):
+            with self.subTest(stage=stage), patch.dict(os.environ, {"GOOGLE_CLOUD_PROJECT": "test-project"}), \
+                    patch.object(main, "speech_client") as client, \
+                    patch.object(main.cloud_speech, "RecognitionConfig") as config, \
+                    patch.object(main, "extract_segments") as extract, \
+                    patch("builtins.print") as log:
+                config.return_value = cloud_speech.RecognizeRequest().config
+                target = {"config": config, "client": client,
+                          "recognize": client.return_value.recognize, "segments": extract}[stage]
+                target.side_effect = RuntimeError("private transcript or credential")
+                with self.assertRaises(https_fn.HttpsError) as failure:
+                    self.call()
+                self.assertEqual(failure.exception.code, https_fn.FunctionsErrorCode.INTERNAL)
+                diagnostic = json.loads(log.call_args.args[0])
+                self.assertEqual(diagnostic["stage"], stage)
+                self.assertEqual(diagnostic["exception_type"], "RuntimeError")
+                self.assertIn(diagnostic["diagnostic_id"], failure.exception.message)
+                self.assertNotIn("private transcript", failure.exception.message)
+                self.assertNotIn("private transcript", log.call_args.args[0])
 
     def test_invalid_payload_never_calls_google(self):
         with patch.object(main, "speech_client") as client:

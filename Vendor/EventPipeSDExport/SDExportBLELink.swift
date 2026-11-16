@@ -15,13 +15,14 @@ public final class SDExportBLELink {
     private var information: CBCharacteristic?
     private var exportInformation: CBCharacteristic?
     private var prepared = false
-    // Reserve the upper half of client request IDs for SD export operations.
     private var nextID: UInt32 = 0x40000000
     private var servicesWaiter: ExportBLEWaiter<CBService>?
     private var characteristicsWaiter: ExportBLEWaiter<Void>?
     private var notifyWaiter: ExportBLEWaiter<Void>?
     private var readWaiter: (CBUUID, ExportBLEWaiter<Data>)?
     private var writeWaiter: ExportBLEWaiter<Void>?
+    private var vadWaiter: (UInt32, ExportBLEWaiter<Bool>)?
+    private var vadStatuses: [UInt32: Bool] = [:]
     private var statusWaiter: (UInt32, ExportBLEWaiter<SDExportStatus>)?
     private var statuses: [UInt32: SDExportStatus] = [:]
     private var issuedRequestIDs = Set<UInt32>()
@@ -108,6 +109,31 @@ public final class SDExportBLELink {
         throw SDExportClientError.bleTimeout
     }
 
+    /// Completes after firmware applies VAD and queues the active WAV END.
+    /// Serialize with other Control operations; the SD writer finalizes asynchronously.
+    @discardableResult
+    public func setVAD(enabled: Bool) async throws -> Bool {
+        if !prepared { try await prepare() }
+        guard featureBits & BLEProtocol.vadControlFeature != 0 else {
+            throw SDExportClientError.unsupportedDevice
+        }
+        guard issuedRequestIDs.isEmpty else { throw SDExportClientError.device(4) }
+        let id = requestID()
+        issuedRequestIDs.insert(id)
+        defer { finishRequest(id); vadStatuses.removeValue(forKey: id); vadWaiter = nil }
+        let command = Packet(header: PacketHeader(messageType: .vadSet, requestID: id),
+                             payload: Data([enabled ? 1 : 0]))
+        try await write(command.encoded(), requestID: id)
+        let actual: Bool
+        if let value = vadStatuses.removeValue(forKey: id) { actual = value }
+        else {
+            try throwRequestError(id)
+            actual = try await wait(timeout: 10, install: { vadWaiter = (id, $0) }) {}
+        }
+        guard actual == enabled else { throw SDExportClientError.invalidResponse }
+        return actual
+    }
+
     public func requireFileDeletion() async throws {
         if !prepared { try await prepare() }
         guard featureBits & BLEProtocol.sdFileDeleteFeature != 0 else {
@@ -192,10 +218,24 @@ public final class SDExportBLELink {
         if let failure = SDExportControlError.decode(packet, issuedRequestIDs: issuedRequestIDs) {
             if requestErrors.count >= 16 { requestErrors.removeAll() }
             requestErrors[failure.requestID] = failure.code
+            if let (id, waiter) = vadWaiter, id == failure.requestID {
+                waiter.finish(.failure(SDExportClientError.device(failure.code))); vadWaiter = nil
+            }
             if let (id, waiter) = statusWaiter,
                id == failure.requestID || failure.requestID == startRequestID {
                 waiter.finish(.failure(SDExportClientError.device(failure.code)))
                 statusWaiter = nil
+            }
+            return
+        }
+        if packet.header.messageType == .vadStatus, issuedRequestIDs.contains(packet.header.requestID),
+           packet.header.flags == 0, packet.header.imageID == 0, packet.header.reserved == 0,
+           packet.header.chunkIndex == 0, packet.header.totalChunks == 0,
+           packet.payload.count == 1, packet.payload[0] <= 1 {
+            let enabled = packet.payload[0] == 1
+            vadStatuses[packet.header.requestID] = enabled
+            if let (id, waiter) = vadWaiter, id == packet.header.requestID {
+                waiter.finish(.success(enabled)); vadWaiter = nil
             }
             return
         }
@@ -296,6 +336,7 @@ public final class SDExportBLELink {
         readWaiter?.1.finish(.failure(error)); readWaiter = nil
         writeWaiter?.finish(.failure(error)); writeWaiter = nil
         statusWaiter?.1.finish(.failure(error)); statusWaiter = nil
+        vadWaiter?.1.finish(.failure(error)); vadWaiter = nil
     }
 }
 

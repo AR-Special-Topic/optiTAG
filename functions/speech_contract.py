@@ -22,20 +22,40 @@ def decode_pcm(data):
     return pcm
 
 
+class SpeechTimestampError(ValueError):
+    """Numeric timing diagnostics only; never retain recognized text."""
+    def __init__(self, start, end, duration):
+        self.timing = {"start": start, "end": end, "duration": duration}
+        super().__init__(f"Google STT 時間戳超出音訊範圍（start={start:.6f}, end={end:.6f}, duration={duration:.6f} 秒）")
+
+
 def extract_segments(response, duration):
+    if not math.isfinite(duration) or duration <= 0:
+        raise ValueError("音訊長度無效")
     segments = []
+    transcripts = []
+    use_chunk_timing = False
     for result in response.results:
         if not result.alternatives:
             continue
         alternative = result.alternatives[0]
         if alternative.transcript.strip() and not alternative.words:
             raise ValueError("Google STT 未回傳要求的逐字時間戳")
+        text = alternative.transcript.strip() or " ".join(word.word for word in alternative.words).strip()
+        if text:
+            transcripts.append(text)
         for word in alternative.words:
             start = word.start_offset.total_seconds()
             end = word.end_offset.total_seconds()
-            if not (math.isfinite(start) and math.isfinite(end) and 0 <= start <= end <= duration + 0.05):
-                raise ValueError("Google STT 時間戳超出音訊範圍")
+            if not (math.isfinite(start) and math.isfinite(end) and 0 <= start <= end):
+                raise SpeechTimestampError(start, end, duration)
             if not word.word.strip():
                 raise ValueError("Google STT 回傳空白字詞")
+            if end > duration:
+                use_chunk_timing = True
             segments.append({"start": start, "end": end, "text": word.word})
+    if use_chunk_timing:
+        # Text belongs to this request's PCM, but word alignment is unusable.
+        # Replace the whole chunk to avoid duplicate text or fabricated word timing.
+        return [{"start": 0.0, "end": duration, "text": " ".join(transcripts)}]
     return segments

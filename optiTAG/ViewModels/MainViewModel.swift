@@ -22,8 +22,8 @@ import Foundation
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
-        ble.onImageReceived = { [weak self] request, image, data in
-            self?.recognize(data, requestID: request, imageID: image)
+        ble.onImageReceived = { [weak self] request, image, data, context in
+            self?.recognize(data, requestID: request, imageID: image, context: context)
         }
         refreshEnrollmentCount()
         loadRecentLogs()
@@ -52,7 +52,7 @@ import Foundation
         }
     }
 
-    private func recognize(_ data: Data, requestID: UInt32, imageID: UInt32) {
+    private func recognize(_ data: Data, requestID: UInt32, imageID: UInt32, context: EventImageContext?) {
         let generation = ble.connectionGeneration
         let started = Date()
         recognitionStatus = "正在辨識…"
@@ -70,13 +70,25 @@ import Foundation
                 similarity = best?.1 ?? 0
                 if let best, best.1 >= self.threshold { person = best.0; status = .ok }
                 self.recognitionStatus = person.map { "辨識結果：\($0.name)（相似度 \(String(format: "%.2f", similarity))）" } ?? "未知人物（尚未登錄或相似度不足）"
-                self.addRecognitionResult(personId: person?.personID, name: person?.name ?? "未知人物", tag: person?.tag ?? "未標記", confidence: Double(similarity))
             } catch {
                 if case FaceRecognitionEngine.Failure.faceCount(let count) = error, count == 0 { status = .noFace }
                 else { status = .failed }
                 self.recognitionStatus = error.localizedDescription
             }
             let elapsed = UInt32(min(Double(UInt32.max), max(0, Date().timeIntervalSince(started) * 1000)))
+            if let context {
+                let states: [StatusCode: String] = [.ok: "RECOGNIZED", .unknown: "UNKNOWN", .noFace: "CLIENT_NO_FACE", .failed: "FAILED"]
+                self.ble.onEventFace?(context.deviceID, context.eventID, [
+                    "event_id": context.eventID, "request_id": String(requestID), "image_id": String(imageID),
+                    "face_index": String(context.faceIndex), "face_count": String(context.faceCount),
+                    "person_id": person.map { String($0.personID) } ?? "", "name": person?.name ?? "未知人物",
+                    "tag": person?.tag ?? "未標記", "similarity": String(similarity),
+                    "status": states[status] ?? "FAILED", "processing_time_ms": String(elapsed)])
+                self.loadRecentLogs()
+            } else if status == .ok || status == .unknown {
+                self.addRecognitionResult(personId: person?.personID, name: person?.name ?? "未知人物",
+                    tag: person?.tag ?? "未標記", confidence: Double(similarity))
+            }
             self.ble.sendRecognitionResult(RecognitionResult(requestID: requestID, imageID: imageID, status: status,
                 personID: person.map { String($0.personID) } ?? "", personName: person?.name ?? "UNKNOWN",
                 similarity: similarity, processingTimeMs: elapsed), generation: generation)
@@ -92,13 +104,13 @@ import Foundation
         }
     }
 
-    func addRecognitionResult(personId: Int64?, name: String, tag: String, confidence: Double? = nil) {
+    func addRecognitionResult(personId: Int64?, name: String, tag: String, confidence: Double? = nil, eventKey: String? = nil, sourceKey: String? = nil) {
         do {
             try database.insertRecognitionLog(
                 personId: personId,
                 recognizedName: name,
                 tag: tag,
-                confidence: confidence
+                confidence: confidence, eventKey: eventKey, sourceKey: sourceKey
             )
             loadRecentLogs()
         } catch {

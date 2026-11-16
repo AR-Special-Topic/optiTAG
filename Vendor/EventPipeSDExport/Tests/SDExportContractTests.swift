@@ -21,6 +21,23 @@ final class SDExportContractTests: XCTestCase {
         let packet = Packet(header: PacketHeader(messageType: .eventComplete, requestID: 21), payload: data)
         _ = try EventPayload.decode(packet)
     }
+    func testVADWireAndProgressFractions() throws {
+        let packet = Packet(header: PacketHeader(messageType: .vadSet, requestID: 42), payload: Data([0]))
+        let decoded = try Packet.decode(packet.encoded())
+        XCTAssertEqual(decoded.header.messageType.rawValue, 23)
+        XCTAssertEqual(decoded.payload, Data([0]))
+        var progress = SDExportProgress(phase: .downloading, path: "event_1.wav", bytes: 50, total: 100)
+        progress.completedBytes = 150; progress.totalBytes = 300
+        XCTAssertEqual(progress.fractionCompleted, 0.5)
+        XCTAssertEqual(progress.fileFractionCompleted, 0.5)
+        progress.completedBytes = 400
+        XCTAssertEqual(progress.fractionCompleted, 1)
+        let empty = SDExportProgress(phase: .completed, path: "", bytes: 0, total: 0)
+        XCTAssertEqual(empty.fractionCompleted, 1)
+        let scanning = SDExportProgress(phase: .scanning, path: "", bytes: 0, total: 0)
+        XCTAssertEqual(scanning.fractionCompleted, 0)
+    }
+
     private let session = "0000000000000001"
     private let emptySHA = SDExportManifestParser.hex(SHA256.hash(data: Data()))
 

@@ -1,5 +1,8 @@
 """Authenticated Firebase callable -> Google Cloud Speech-to-Text V2."""
 import os
+import json
+import math
+import uuid
 from functools import lru_cache
 
 from firebase_admin import initialize_app
@@ -8,7 +11,7 @@ from google.api_core import exceptions
 from google.api_core.client_options import ClientOptions
 from google.cloud import speech_v2
 from google.cloud.speech_v2.types import cloud_speech
-from speech_contract import decode_pcm, extract_segments, SAMPLE_RATE
+from speech_contract import decode_pcm, extract_segments, SAMPLE_RATE, SpeechTimestampError
 
 initialize_app()
 
@@ -33,29 +36,57 @@ def transcribeSpeech(request: https_fn.CallableRequest) -> dict:
     project = os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("GCLOUD_PROJECT")
     if not project:
         raise https_fn.HttpsError(https_fn.FunctionsErrorCode.FAILED_PRECONDITION, "後端未設定 Google Cloud 專案")
-    config = cloud_speech.RecognitionConfig(
-        explicit_decoding_config=cloud_speech.ExplicitDecodingConfig(
-            encoding=cloud_speech.ExplicitDecodingConfig.AudioEncoding.LINEAR16,
-            sample_rate_hertz=SAMPLE_RATE, audio_channel_count=1),
-        language_codes=["cmn-Hant-TW"], model="chirp_2",
-        features=cloud_speech.RecognitionFeatures(enable_word_time_offsets=True,
-                                                  enable_automatic_punctuation=True))
+    stage = "config"
     try:
-        response = speech_client().recognize(
+        config = cloud_speech.RecognitionConfig(
+            explicit_decoding_config=cloud_speech.ExplicitDecodingConfig(
+                encoding=cloud_speech.ExplicitDecodingConfig.AudioEncoding.LINEAR16,
+                sample_rate_hertz=SAMPLE_RATE, audio_channel_count=1),
+            language_codes=["cmn-Hant-TW"], model="chirp_2",
+            features=cloud_speech.RecognitionFeatures(enable_word_time_offsets=True,
+                                                      enable_automatic_punctuation=True))
+        stage = "client"
+        client = speech_client()
+        stage = "recognize"
+        response = client.recognize(
             request=cloud_speech.RecognizeRequest(
                 recognizer=f"projects/{project}/locations/{REGION}/recognizers/_",
                 config=config, content=pcm), timeout=105, retry=None)
+        stage = "segments"
         return {"segments": extract_segments(response, len(pcm) / (SAMPLE_RATE * 2))}
-    except exceptions.ResourceExhausted:
-        raise https_fn.HttpsError(https_fn.FunctionsErrorCode.RESOURCE_EXHAUSTED, "STT 配額已用完，請稍後重試") from None
-    except (exceptions.DeadlineExceeded, exceptions.ServiceUnavailable):
-        raise https_fn.HttpsError(https_fn.FunctionsErrorCode.UNAVAILABLE, "STT 暫時無法使用，錄音可稍後重試") from None
-    except (exceptions.PermissionDenied, exceptions.Unauthenticated):
-        raise https_fn.HttpsError(https_fn.FunctionsErrorCode.FAILED_PRECONDITION, "請檢查後端服務帳戶的 Speech-to-Text 權限、API 與計費") from None
-    except exceptions.InvalidArgument:
-        raise https_fn.HttpsError(https_fn.FunctionsErrorCode.FAILED_PRECONDITION, "請檢查 STT V2 模型、語言與音訊設定") from None
+    except exceptions.ResourceExhausted as error:
+        raise speech_failure(https_fn.FunctionsErrorCode.RESOURCE_EXHAUSTED, "STT 配額已用完，請稍後重試", error, stage) from None
+    except (exceptions.DeadlineExceeded, exceptions.ServiceUnavailable) as error:
+        raise speech_failure(https_fn.FunctionsErrorCode.UNAVAILABLE, "STT 暫時無法使用，錄音可稍後重試", error, stage) from None
+    except (exceptions.PermissionDenied, exceptions.Unauthenticated) as error:
+        raise speech_failure(https_fn.FunctionsErrorCode.FAILED_PRECONDITION, "請檢查後端服務帳戶的 Speech-to-Text 權限、API 與計費", error, stage) from None
+    except exceptions.InvalidArgument as error:
+        raise speech_failure(https_fn.FunctionsErrorCode.FAILED_PRECONDITION, "請檢查 STT V2 模型、語言與音訊設定", error, stage) from None
+    except SpeechTimestampError as error:
+        raise speech_failure(https_fn.FunctionsErrorCode.INTERNAL, str(error), error, stage) from None
     except ValueError as error:
-        raise https_fn.HttpsError(https_fn.FunctionsErrorCode.INTERNAL, str(error)) from None
-    except Exception:
-        # Never return/log audio, credentials, transcripts, or raw upstream errors.
-        raise https_fn.HttpsError(https_fn.FunctionsErrorCode.INTERNAL, "STT 後端處理失敗，錄音可稍後重試") from None
+        raise speech_failure(https_fn.FunctionsErrorCode.INTERNAL, "STT 設定或回覆格式無效", error, stage) from None
+    except Exception as error:
+        # Only sanitized diagnostics are recorded by speech_failure.
+        raise speech_failure(https_fn.FunctionsErrorCode.INTERNAL, "STT 後端處理失敗，錄音可稍後重試", error, stage) from None
+
+
+def speech_failure(code, message, error, stage):
+    """Correlate failures without exception text, request data, or frame locals."""
+    diagnostic_id = uuid.uuid4().hex
+    frames = []
+    traceback = error.__traceback__
+    while traceback is not None:
+        frame = traceback.tb_frame
+        frames.append({"file": os.path.basename(frame.f_code.co_filename),
+                       "function": frame.f_code.co_name, "line": traceback.tb_lineno})
+        traceback = traceback.tb_next
+    print(json.dumps({"severity": "ERROR", "message": "STT backend failure",
+                      "diagnostic_id": diagnostic_id, "stage": stage,
+                      "exception_type": type(error).__name__, "code": code.value,
+                      "revision": os.environ.get("K_REVISION", "local"),
+                      "frames": frames,
+                      "timing": {key: value if math.isfinite(value) else str(value)
+                                 for key, value in error.timing.items()}
+                      if isinstance(error, SpeechTimestampError) else None}), flush=True)
+    return https_fn.HttpsError(code, f"{message}（診斷：{diagnostic_id}，階段：{stage}）")

@@ -14,6 +14,7 @@ public enum BLEProtocol {
     public static let sdExportInfoUUID = CBUUID(string: "7f510006-b7b2-4f6a-9f3a-6c8a2d7e1000")
     public static let wifiSDExportFeature: UInt32 = 0x00000040
     public static let eventMultiBatchFeature: UInt32 = 0x00000080
+    public static let vadControlFeature: UInt32 = 0x00000200
     public static let sdFileDeleteFeature: UInt32 = 0x00000100
 }
 
@@ -23,6 +24,7 @@ public enum MessageType: UInt8 {
     case recognitionResult = 10, noFace = 11, error = 12, ping = 13, pong = 14
     case eventOpen = 15, eventAudioReady = 16, faceBatchEnd = 17, eventComplete = 18
     case sdExportStart = 19, sdExportCancel = 20, sdExportGetStatus = 21, sdExportStatus = 22
+    case vadSet = 23, vadStatus = 24
 }
 
 public struct MessageFlags: OptionSet {

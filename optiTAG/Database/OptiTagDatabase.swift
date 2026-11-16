@@ -104,11 +104,13 @@ final class OptiTagDatabase {
         recognizedName: String,
         tag: String,
         confidence: Double? = nil,
-        recognizedAt: Date = Date()
+        recognizedAt: Date = Date(),
+        eventKey: String? = nil,
+        sourceKey: String? = nil
     ) throws -> Int64 {
         let sql = """
-        INSERT INTO recognition_logs (person_id, recognized_name, tag, confidence, recognized_at)
-        VALUES (?, ?, ?, ?, ?);
+        INSERT INTO recognition_logs (person_id, recognized_name, tag, confidence, recognized_at, event_key, source_key)
+        VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(source_key) DO NOTHING;
         """
 
         var statement: OpaquePointer?
@@ -130,12 +132,22 @@ final class OptiTagDatabase {
             sqlite3_bind_null(statement, 4)
         }
         bind(dateFormatter.string(from: recognizedAt), to: statement, index: 5)
+        if let eventKey { bind(eventKey, to: statement, index: 6) } else { sqlite3_bind_null(statement, 6) }
+        if let sourceKey { bind(sourceKey, to: statement, index: 7) } else { sqlite3_bind_null(statement, 7) }
 
         guard sqlite3_step(statement) == SQLITE_DONE else {
             throw OptiTagDatabaseError.executeFailed(errorMessage)
         }
 
         return sqlite3_last_insert_rowid(db)
+    }
+
+    func deleteEventRecognitionLogs(eventKey: String) throws {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "DELETE FROM recognition_logs WHERE event_key=?;", -1, &statement, nil) == SQLITE_OK else { throw OptiTagDatabaseError.prepareFailed(errorMessage) }
+        defer { sqlite3_finalize(statement) }
+        bind(eventKey, to: statement, index: 1)
+        guard sqlite3_step(statement) == SQLITE_DONE else { throw OptiTagDatabaseError.executeFailed(errorMessage) }
     }
 
     private func openDatabase(at overrideURL: URL?) throws {
@@ -282,6 +294,15 @@ final class OptiTagDatabase {
             FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE SET NULL
         );
         """)
+        var columns = Set<String>()
+        var info: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "PRAGMA table_info(recognition_logs);", -1, &info, nil) == SQLITE_OK else { throw OptiTagDatabaseError.prepareFailed(errorMessage) }
+        while sqlite3_step(info) == SQLITE_ROW { columns.insert(stringValue(info, column: 1)) }
+        sqlite3_finalize(info)
+        if !columns.contains("event_key") { try execute("ALTER TABLE recognition_logs ADD COLUMN event_key TEXT;") }
+        if !columns.contains("source_key") { try execute("ALTER TABLE recognition_logs ADD COLUMN source_key TEXT;") }
+        try execute("CREATE UNIQUE INDEX IF NOT EXISTS recognition_source ON recognition_logs(source_key);")
+        try execute("CREATE INDEX IF NOT EXISTS recognition_event ON recognition_logs(event_key);")
         try execute("""
         CREATE TABLE IF NOT EXISTS face_embeddings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

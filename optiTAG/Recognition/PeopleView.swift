@@ -2,12 +2,35 @@ import SwiftUI
 import PhotosUI
 
 struct PeopleView: View {
+    @ObservedObject var viewModel: MainViewModel
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var enrollmentData: Data?
+    @State private var personName = ""
+    @State private var personTag = ""
+    @FocusState private var inputFocused: Bool
     @State private var people: [Person] = []
     @State private var error: String?
     var body: some View {
         List {
+            Section("登錄新人物") {
+                        TextField("人物姓名", text: $personName).textFieldStyle(.roundedBorder).focused($inputFocused).submitLabel(.done).onSubmit { inputFocused = false }
+                        TextField("標籤（例如朋友、同學）", text: $personTag).textFieldStyle(.roundedBorder).focused($inputFocused).submitLabel(.done).onSubmit { inputFocused = false }
+                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                            Label(enrollmentData == nil ? "選擇單人正面照片" : "已選擇照片，點此更換", systemImage: "photo")
+                        }
+                        .disabled(viewModel.isEnrolling)
+                        if let data = enrollmentData, let image = UIImage(data: data) {
+                            Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 120)
+                        }
+                        Button(viewModel.isEnrolling ? "建立特徵中…" : "新增人物") {
+                            inputFocused = false
+                            if let data = enrollmentData { viewModel.enroll(data: data, name: personName, tag: personTag) }
+                        }
+                        .disabled(enrollmentData == nil || personName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isEnrolling)
+                Text(viewModel.recognitionStatus).font(.caption)
+            }
             if let error { Text(error).foregroundStyle(.red) }
-            if people.isEmpty { Text("請在首頁選取照片新增人物") }
+            if people.isEmpty { Text("選取照片以新增人物") }
             ForEach(people) { person in
                 NavigationLink { PersonEditor(person: person) } label: {
                     VStack(alignment: .leading) { Text(person.name); Text(person.tag).font(.caption).foregroundStyle(.secondary) }
@@ -17,6 +40,17 @@ struct PeopleView: View {
                 catch { self.error = error.localizedDescription }
             }
         }.navigationTitle("人物資料庫").onAppear(perform: reload)
+        .scrollDismissesKeyboard(.interactively)
+        .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("完成") { inputFocused = false } } }
+        .onChange(of: viewModel.enrollmentRevision) { _, _ in
+            reload(); selectedPhoto = nil; enrollmentData = nil; personName = ""; personTag = ""
+        }
+        .task(id: selectedPhoto) {
+            enrollmentData = nil
+            guard let photo = selectedPhoto else { return }
+            do { enrollmentData = try await photo.loadTransferable(type: Data.self) }
+            catch { viewModel.databaseErrorMessage = "照片讀取失敗：\(error.localizedDescription)" }
+        }
     }
     private func reload() {
         do { people = try OptiTagDatabase.shared.fetchPersons() } catch { self.error = error.localizedDescription }

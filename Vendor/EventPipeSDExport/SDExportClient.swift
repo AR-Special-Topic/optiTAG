@@ -46,6 +46,21 @@ public struct SDExportProgress: Sendable {
     public let path: String
     public let bytes: UInt64
     public let total: UInt64
+    public var completedFiles: UInt64 = 0
+    public var totalFiles: UInt64 = 0
+    public var completedEvents: UInt64 = 0
+    public var totalEvents: UInt64 = 0
+    public var completedBytes: UInt64 = 0
+    public var totalBytes: UInt64 = 0
+    public var completedWAVBytes: UInt64 = 0
+    public var totalWAVBytes: UInt64 = 0
+    public var fractionCompleted: Double {
+        if totalBytes > 0 { return min(1, Double(completedBytes) / Double(totalBytes)) }
+        return totalFiles == completedFiles && phase != .scanning ? 1 : 0
+    }
+    public var fileFractionCompleted: Double {
+        total > 0 ? min(1, Double(bytes) / Double(total)) : (phase == .completed ? 1 : 0)
+    }
 }
 
 public struct SDExportResult: Sendable {
@@ -210,17 +225,19 @@ actor SDExportHTTPClient {
 
     func invalidate() { session.invalidateAndCancel(); controlSession.invalidateAndCancel() }
 
-    func deleteFiles(paths: [String]) async throws -> [String] {
+    func deleteFiles(paths: [String], reconcileMissing: Bool = false, onConfirmed: @Sendable (String) async throws -> Void = { _ in }) async throws -> [String] {
         for path in paths { try SDExportPaths.validate(path) }
         guard Set(paths).count == paths.count else { throw SDExportClientError.unsafePath("duplicate paths") }
         let temporary = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".ndjson")
         defer { try? fm.removeItem(at: temporary) }
         let manifest = try await fetchManifest(to: temporary, progress: { _ in })
         let byPath = Dictionary(uniqueKeysWithValues: manifest.files.map { ($0.path, $0) })
-        guard paths.allSatisfy({ byPath[$0] != nil }) else { throw SDExportClientError.unsafePath("file not in current manifest") }
-        var deleted: [String] = []
+        guard reconcileMissing || paths.allSatisfy({ byPath[$0] != nil }) else { throw SDExportClientError.unsafePath("file not in current manifest") }
+        // A fresh verified manifest proves an uncertain earlier DELETE already removed a file.
+        var deleted: [String] = reconcileMissing ? paths.filter { byPath[$0] == nil } : []
         do {
-            for path in paths {
+            for path in deleted { try await onConfirmed(path) }
+            for path in paths where byPath[path] != nil {
                 try Task.checkCancellation()
                 guard let file = byPath[path] else { throw SDExportClientError.invalidResponse }
                 var deletion = request("file", query: [URLQueryItem(name: "path", value: path)])
@@ -234,6 +251,7 @@ actor SDExportHTTPClient {
                     throw SDExportClientError.invalidResponse
                 }
                 deleted.append(path)
+                try await onConfirmed(path)
             }
         } catch {
             // A lost HTTP response leaves that last file's outcome uncertain.
@@ -269,16 +287,49 @@ actor SDExportHTTPClient {
         let temporaryManifest = stateDirectory.appendingPathComponent("manifest.downloading")
         let manifest = try await fetchManifest(to: temporaryManifest, progress: progress)
         try replace(temporaryManifest, with: manifestURL)
+        var completedFiles: UInt64 = 0
+        var completedEvents: UInt64 = 0
+        var completedBytes: UInt64 = 0
+        var completedWAVBytes: UInt64 = 0
+        let wavFiles = manifest.files.filter { $0.path.lowercased().hasSuffix(".wav") }
+        let totalWAVBytes = wavFiles.reduce(UInt64(0)) { $0 + $1.size }
+        let totalEvents = wavFiles.filter { URL(fileURLWithPath: $0.path).lastPathComponent.hasPrefix("event_") }.count
+        if manifest.files.isEmpty {
+            progress(SDExportProgress(phase: .completed, path: "", bytes: 0, total: 0))
+        }
         for file in manifest.files {
+            let isWAV = file.path.lowercased().hasSuffix(".wav")
+            let isEvent = isWAV && URL(fileURLWithPath: file.path).lastPathComponent.hasPrefix("event_")
+            let priorFiles = completedFiles, priorEvents = completedEvents
+            let priorBytes = completedBytes, priorWAVBytes = completedWAVBytes
+            let report: @Sendable (SDExportProgress) -> Void = { update in
+                var summary = update
+                let verified = update.phase == .completed
+                let current = min(update.bytes, file.size)
+                summary.completedFiles = priorFiles + (verified ? 1 : 0)
+                summary.totalFiles = manifest.end.fileCount
+                summary.completedEvents = priorEvents + (verified && isEvent ? 1 : 0)
+                summary.totalEvents = UInt64(totalEvents)
+                summary.completedBytes = priorBytes + current
+                summary.totalBytes = manifest.end.totalBytes
+                summary.completedWAVBytes = priorWAVBytes + (isWAV ? current : 0)
+                summary.totalWAVBytes = totalWAVBytes
+                progress(summary)
+            }
+            defer {
+                completedFiles += 1; completedBytes += file.size
+                if isWAV { completedWAVBytes += file.size }
+                if isEvent { completedEvents += 1 }
+            }
             try Task.checkCancellation()
             let target = try SDExportPaths.file(file.path, below: filesDirectory)
-            progress(SDExportProgress(phase: .checking, path: file.path, bytes: 0, total: file.size))
+            report(SDExportProgress(phase: .checking, path: file.path, bytes: 0, total: file.size))
             if fm.fileExists(atPath: target.path), try size(target) == file.size,
                try await sha256(target) == file.sha256 {
-                progress(SDExportProgress(phase: .completed, path: file.path, bytes: file.size, total: file.size))
+                report(SDExportProgress(phase: .completed, path: file.path, bytes: file.size, total: file.size))
                 continue
             }
-            try await fetchFile(file, target: target, stateDirectory: stateDirectory, progress: progress)
+            try await fetchFile(file, target: target, stateDirectory: stateDirectory, progress: report)
         }
         return (manifest, manifestURL, filesDirectory)
     }
@@ -394,6 +445,7 @@ actor SDExportHTTPClient {
                     try Task.checkCancellation()
                     if !buffer.isEmpty { try output.write(contentsOf: buffer) }
                     guard received == remaining else { throw SDExportClientError.invalidResponse }
+                    progress(SDExportProgress(phase: .downloading, path: file.path, bytes: offset + received, total: file.size))
                     try output.synchronize()
                 }
                 guard try await sha256(partial) == file.sha256 else {
@@ -482,7 +534,9 @@ public final class SDExportCoordinator {
     }
 
     /// Explicit deletion only. exportAll never deletes source files.
-    public func deleteFiles(paths: [String]) async throws -> SDFileDeletionResult {
+    public func deleteFiles(paths: [String], reconcileMissing: Bool = false,
+                            nextBatch: (@MainActor () throws -> [String])? = nil,
+                            onConfirmed: @escaping @MainActor (String) throws -> Void = { _ in }) async throws -> SDFileDeletionResult {
         guard !running else { throw SDExportClientError.alreadyRunning }
         guard UIApplication.shared.applicationState == .active else { throw SDExportClientError.foregroundRequired }
         for path in paths { try SDExportPaths.validate(path) }
@@ -494,6 +548,8 @@ public final class SDExportCoordinator {
         var sessionID: UInt64 = 0
         var client: SDExportHTTPClient?
         var confirmedDeleted: [String] = []
+        var heartbeat: Task<Void, Never>?
+        defer { heartbeat?.cancel() }
         do {
             try await link.requireFileDeletion()
             let ready = try await link.beginExport()
@@ -508,8 +564,31 @@ public final class SDExportCoordinator {
                     try await Task.sleep(nanoseconds: 1_000_000_000)
                 }
             }
-            let deleted = try await http.deleteFiles(paths: paths)
-            confirmedDeleted = deleted
+            heartbeat = Task {
+                while !Task.isCancelled {
+                    do { try await Task.sleep(nanoseconds: 20_000_000_000) } catch { return }
+                    try? await http.keepAlive()
+                }
+            }
+            var batch = paths
+            var seen = Set<String>()
+            while !batch.isEmpty {
+                try Task.checkCancellation()
+                guard Set(batch).count == batch.count, batch.allSatisfy({ seen.insert($0).inserted }) else {
+                    throw SDExportClientError.unsafePath("repeated deletion batch")
+                }
+                do {
+                    let deleted = try await http.deleteFiles(paths: batch, reconcileMissing: reconcileMissing) { path in
+                        try await onConfirmed(path)
+                    }
+                    confirmedDeleted.append(contentsOf: deleted)
+                } catch SDExportClientError.partialDeletion(let deleted, let reason) {
+                    confirmedDeleted.append(contentsOf: deleted)
+                    throw SDExportClientError.partialDeletion(deletedPaths: confirmedDeleted, reason: reason)
+                }
+                batch = try nextBatch?() ?? []
+            }
+            heartbeat?.cancel(); heartbeat = nil
             // Closing a management-only session uses CANCEL, not an export receipt.
             try await link.cancelExport(sessionID: sessionID)
             var restored = false
@@ -526,7 +605,7 @@ public final class SDExportCoordinator {
                 try await Task.sleep(nanoseconds: 1_000_000_000)
             }
             await http.invalidate()
-            return SDFileDeletionResult(deletedPaths: deleted, deviceRestored: restored)
+            return SDFileDeletionResult(deletedPaths: confirmedDeleted, deviceRestored: restored)
         } catch {
             if let client { await client.invalidate() }
             let active = sessionID != 0 ? sessionID : link.ownedSessionID

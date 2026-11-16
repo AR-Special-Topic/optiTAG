@@ -41,7 +41,7 @@ struct GoogleSpeechFailure: LocalizedError {
         } else if apiError == nil {
             lines.append("伺服器未提供可解析的 Google 錯誤訊息。")
         }
-        lines.append("錄音已保留，修正後可按「重試未完成的彙整」。")
+        lines.append("錄音已保留，修正後可按「重試轉寫」。")
         var diagnostic = lines.joined(separator: "\n")
         if !apiKey.isEmpty { diagnostic = diagnostic.replacingOccurrences(of: apiKey, with: "[已隱藏金鑰]") }
         // Also redact key-shaped strings if the server returns a different credential.

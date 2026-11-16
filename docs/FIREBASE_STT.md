@@ -6,7 +6,7 @@ App → Firebase Auth（自動匿名登入）→ callable `transcribeSpeech`（`
 
 後端固定 `chirp_2`、`cmn-Hant-TW`、16kHz／單聲道／little-endian PCM16，使用 `recognizers/_`，不必先建立 Recognizer。每段最多 50 秒（1,600,000 bytes）；App 送出 `{ "pcm": "base64…" }`，後端回傳 `{ "segments": [{ "start": 0.0, "end": 0.5, "text": "文字" }] }`。時間相對當次區塊，App 加回原錄音 offset。只有成功的空陣列算無語音；錯誤與缺少時間戳都保留錄音。
 
-後端不另存音訊或逐字稿，也不記錄原始請求／上游錯誤。Google STT 本身依專案服務設定處理音訊。Function 使用 runtime service account 的 ADC，不需 API key 或私鑰檔。最大 instances=2、concurrency=4；這是併發限制，並非每日花費上限或每個使用者的用量配額。
+後端不另存音訊或逐字稿，也不記錄原始請求／上游錯誤文字。失敗時僅記錄診斷編號、階段、例外類型、錯誤代碼、revision 與不含區域變數的程式位置；App 顯示相同診斷編號供對照。Google STT 本身依專案服務設定處理音訊。Function 使用 runtime service account 的 ADC，不需 API key 或私鑰檔。最大 instances=2、concurrency=4；這是併發限制，並非每日花費上限或每個使用者的用量配額。
 
 ## 部署前設定
 
@@ -43,3 +43,15 @@ zsh Tests/run-contract-checks.sh
 真機 XR：完成 debug token 登錄後下載一段繁中語音，確認時間戳及摘要；無語音應清理錄音，斷網／未授權／配額錯誤應保留錄音。支援 Apple Speech 的裝置仍優先使用本機辨識，因此不一定會呼叫後端。App 取消會停止接下來的區塊；已送出的 Function 工作可能仍完成並產生費用，未自動重試上游 STT。
 
 官方參考：[Callable Functions](https://firebase.google.com/docs/functions/callable)、[App Check](https://firebase.google.com/docs/app-check/ios/app-attest-provider)、[匿名登入](https://firebase.google.com/docs/auth/ios/anonymous-auth)、[Chirp 2 與逐字時間戳](https://docs.cloud.google.com/speech-to-text/docs/models/chirp-2)。
+
+## App 顯示 INTERNAL
+
+`INTERNAL` 是 callable 的通用內部錯誤，單憑這個字串無法判定根因。App 會顯示 Google STT 失敗的錄音區段與 Firebase 錯誤 domain/code；錄音保留供重試。請在 Firebase／Google Cloud Console 查看 `asia-southeast1` 的 `transcribeSpeech` 同時段執行紀錄，確認部署版本、Speech API、計費與 runtime service account 權限。若沒有對應執行紀錄，也需確認 App 的 Firebase 專案設定與 callable 部署位置。不要把原始音訊、逐字稿或憑證加入日誌。
+
+修正後按「重試轉寫」，不必重新下載。更新 App 的錯誤提示並不會修復尚未確認的後端問題。
+
+後端診斷修改需重新部署 `functions:speech` 才會生效；只更新 iOS App 不會更新 Cloud Function。新錯誤訊息包含「診斷」與 config／client／recognize／segments 階段。若仍只有 INTERNAL，需檢查 callable handler 之前的驗證或平台日誌，不能推定為 Speech API 錯誤。
+
+## 逐字時間超出錄音範圍
+
+實測同一段 2.558625 秒 PCM 的多個尾字時間連續超出錄音終點。若時間有限、非負且 start ≤ end，但超出錄音範圍，改將該次請求所有 result 的完整辨識文字合為一個 segment，來源時間為整段 PCM 的 0–duration（每段最多 50 秒）。不裁切多個尾字成零長度區段、不丟棄尾字、不當成無語音，也不再逐次放寬容差。此時引用只能定位到整個區塊，不能視為精確逐字時間；這不保證辨識文字本身正確。正常範圍內的逐字時間仍保留；缺少逐字時間、倒序、負值與非有限值仍報錯並保留錄音。

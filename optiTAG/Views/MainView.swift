@@ -5,10 +5,6 @@ struct MainView: View {
     @Binding var isMenuOpen: Bool
     @ObservedObject var viewModel: MainViewModel
 
-    @State private var selectedPhoto: PhotosPickerItem?
-    @State private var enrollmentData: Data?
-    @State private var personName = ""
-    @State private var personTag = ""
 
     @FocusState private var inputFocused: Bool
 
@@ -94,6 +90,8 @@ struct MainView: View {
                             .stroke(Color(hex: "#e5e7eb"), lineWidth: 0.5)
                     )
 
+                    AutoRecordingCard(ble: viewModel.ble)
+
                     VStack(alignment: .leading, spacing: 12) {
                         Text("人臉辨識").font(.headline)
                         Text(viewModel.recognitionStatus).font(.subheadline)
@@ -104,20 +102,7 @@ struct MainView: View {
                         if let error = viewModel.ble.errorText {
                             Text(error).font(.caption).foregroundStyle(.red)
                         }
-                        TextField("人物姓名", text: $personName).textFieldStyle(.roundedBorder).focused($inputFocused).submitLabel(.done).onSubmit { inputFocused = false }
-                        TextField("標籤（例如朋友、同學）", text: $personTag).textFieldStyle(.roundedBorder).focused($inputFocused).submitLabel(.done).onSubmit { inputFocused = false }
-                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                            Label(enrollmentData == nil ? "選擇單人正面照片" : "已選擇照片，點此更換", systemImage: "photo")
-                        }
-                        .disabled(viewModel.isEnrolling)
-                        if let data = enrollmentData, let image = UIImage(data: data) {
-                            Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 120)
-                        }
-                        Button(viewModel.isEnrolling ? "建立特徵中…" : "新增人物") {
-                            inputFocused = false
-                            if let data = enrollmentData { viewModel.enroll(data: data, name: personName, tag: personTag) }
-                        }
-                        .disabled(enrollmentData == nil || personName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isEnrolling)
+
                     }
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -217,18 +202,10 @@ struct MainView: View {
             }
         }
         .background(Color(hex: "#f8f7ff"))
-        .onAppear { viewModel.refreshEnrollmentCount() }
+        .onAppear { viewModel.refreshEnrollmentCount(); viewModel.loadRecentLogs() }
         .scrollDismissesKeyboard(.interactively)
         .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("完成") { inputFocused = false } } }
-        .onChange(of: viewModel.enrollmentRevision) { _, _ in
-            selectedPhoto = nil; enrollmentData = nil; personName = ""; personTag = ""
-        }
-        .task(id: selectedPhoto) {
-            enrollmentData = nil
-            guard let photo = selectedPhoto else { return }
-            do { enrollmentData = try await photo.loadTransferable(type: Data.self) }
-            catch { viewModel.databaseErrorMessage = "照片讀取失敗：\(error.localizedDescription)" }
-        }
+
     }
 
     private func relativeTimeString(for date: Date) -> String {
@@ -275,5 +252,45 @@ struct MainView: View {
         default:
             return Color(hex: "#ede9fe")
         }
+    }
+}
+
+
+private struct AutoRecordingCard: View {
+    @ObservedObject var ble: BLEManager
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Toggle(isOn: Binding(
+                get: { ble.vadEnabled ?? false },
+                set: { enabled in Task { await ble.setVAD(enabled: enabled) } }
+            )) {
+                Label("自動錄音", systemImage: "mic.fill")
+                    .font(.subheadline.bold())
+            }
+            .toggleStyle(.switch)
+            .tint(Color(hex: "#7c3aed"))
+            .disabled(!ble.canCapture || ble.isExporting || ble.isChangingVAD)
+            .accessibilityValue(ble.vadEnabled.map { $0 ? "已開啟" : "已關閉" } ?? "尚未確認")
+
+            if ble.isChangingVAD {
+                ProgressView("等待裝置確認…").font(.caption)
+            } else {
+                Text(ble.isConnected
+                     ? (ble.vadEnabled.map { $0 ? "已開啟，偵測到語音時自動錄音" : "已關閉自動錄音" } ?? "尚未確認裝置狀態，開啟開關以啟用自動錄音")
+                     : "請先連線裝置")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let error = ble.vadError {
+                Text(error).font(.caption).foregroundStyle(.red)
+            }
+        }
+        .padding(14)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color(hex: "#e5e7eb"), lineWidth: 0.5)
+        )
     }
 }

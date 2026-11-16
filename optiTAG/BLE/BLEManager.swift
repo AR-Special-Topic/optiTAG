@@ -20,7 +20,11 @@ struct DiscoveredDevice: Identifiable, Equatable {
     @Published private(set) var canCapture = false
     @Published private(set) var receivedImage: UIImage?
     @Published private(set) var imageInfo: String?
-    var onImageReceived: ((UInt32, UInt32, Data) -> Void)?
+    var onImageReceived: ((UInt32, UInt32, Data, EventImageContext?) -> Void)?
+    var onEventFace: ((String, String, [String: String]) -> Void)?
+    private var eventRequests: [UInt32: String] = [:]
+    private var eventBoot: String?
+    private var activeEventContext: EventImageContext?
 
     struct WiFiJoinPrompt {
         let ssid: String
@@ -50,10 +54,13 @@ struct DiscoveredDevice: Identifiable, Equatable {
     @Published private(set) var isExporting = false
     var exportDeviceID: String { peripheral?.identifier.uuidString ?? "unknown" }
 
-    @MainActor func downloadEvents() async throws -> SDExportResult {
-        guard !isExporting, let peripheral else { throw PersonError.message("請先連線裝置") }
-        isExporting = true
-        defer { isExporting = false }
+    @Published private(set) var vadEnabled: Bool?
+    @Published private(set) var isChangingVAD = false
+    @Published private(set) var vadError: String?
+    @Published private(set) var exportProgress: SDExportProgress?
+    private var exportProgressID: UUID?
+
+    private func prepareExportLink(_ peripheral: CBPeripheral) {
         if exportLink == nil {
             let link = SDExportBLELink(peripheral: peripheral)
             exportLink = link; exportCoordinator = SDExportCoordinator(link: link) { [weak self] info in
@@ -61,16 +68,52 @@ struct DiscoveredDevice: Identifiable, Equatable {
                 try await self.waitForManualWiFi(info)
             }
         }
-        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("SDExport").appendingPathComponent(peripheral.identifier.uuidString)
-        return try await exportCoordinator!.exportAll(to: directory)
     }
 
-    @MainActor func deleteEventAudio(paths: [String]) async throws -> SDFileDeletionResult {
-        guard !isExporting, let coordinator = exportCoordinator else { throw PersonError.message("匯出工作尚未就緒") }
+    func setVAD(enabled: Bool) async {
+        guard isConnected, !isExporting, !isChangingVAD, let peripheral else { return }
+        isChangingVAD = true
+        vadError = nil
+        let generation = connectionGeneration
+        defer { isChangingVAD = false }
+        prepareExportLink(peripheral)
+        do {
+            let actual = try await exportLink!.setVAD(enabled: enabled)
+            guard generation == connectionGeneration else { return }
+            vadEnabled = actual
+        } catch {
+            guard generation == connectionGeneration else { return }
+            vadError = "VAD 設定失敗：\(error.localizedDescription)"
+        }
+    }
+
+    @MainActor func downloadEvents() async throws -> SDExportResult {
+        guard !isExporting, !isChangingVAD, isConnected, let peripheral else { throw PersonError.message("請先連線裝置") }
+        isExporting = true
+        exportProgress = nil
+        let progressID = UUID()
+        exportProgressID = progressID
+        defer { isExporting = false; exportProgress = nil; exportProgressID = nil }
+        prepareExportLink(peripheral)
+        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("SDExport").appendingPathComponent(peripheral.identifier.uuidString)
+        return try await exportCoordinator!.exportAll(to: directory) { [weak self] update in
+            Task { @MainActor in
+                guard let self, self.exportProgressID == progressID else { return }
+                self.exportProgress = update
+            }
+        }
+    }
+
+    @MainActor func deleteEventAudio(paths: [String],
+        nextBatch: (@MainActor () throws -> [String])? = nil,
+        onConfirmed: @escaping @MainActor (String) throws -> Void = { _ in }) async throws -> SDFileDeletionResult {
+        guard !isExporting, !isChangingVAD, isConnected, let peripheral else { throw PersonError.message("請先連線裝置") }
+        prepareExportLink(peripheral)
+        guard let coordinator = exportCoordinator else { throw PersonError.message("匯出工作尚未就緒") }
         isExporting = true
         defer { isExporting = false }
-        return try await coordinator.deleteFiles(paths: paths)
+        return try await coordinator.deleteFiles(paths: paths, reconcileMissing: true, nextBatch: nextBatch, onConfirmed: onConfirmed)
     }
 
     private lazy var central = CBCentralManager(delegate: self, queue: nil)
@@ -131,7 +174,7 @@ struct DiscoveredDevice: Identifiable, Equatable {
     }
 
     func startCapture() {
-        guard !isExporting else { return }
+        guard !isExporting, !isChangingVAD else { return }
         guard canCapture, let peripheral, let controlCharacteristic else { return }
         let id = requestID
         requestID = requestID == 0x3fffffff ? 1 : requestID + 1
@@ -158,6 +201,9 @@ struct DiscoveredDevice: Identifiable, Equatable {
             case .imageBegin:
                 try assembler.begin(packet)
                 activeImage = (packet.header.requestID, packet.header.imageID)
+                activeEventContext = eventRequests[packet.header.requestID].map {
+                    EventImageContext(deviceID: exportDeviceID, eventID: $0, faceIndex: assembler.faceIndex, faceCount: assembler.faceCount)
+                }
                 transferStartedAt = Date()
                 chunkCount = 0
                 statusText = "接收影像中"
@@ -171,10 +217,21 @@ struct DiscoveredDevice: Identifiable, Equatable {
                 let elapsed = Date().timeIntervalSince(transferStartedAt ?? Date()) * 1000
                 imageInfo = "request \(packet.header.requestID), image \(packet.header.imageID), \(imageData.count) bytes, \(chunkCount) chunks, \(Int(elapsed)) ms"
                 statusText = receivedImage == nil ? "收到影像但無法解碼" : "影像接收完成"
-                onImageReceived?(packet.header.requestID, packet.header.imageID, imageData)
+                onImageReceived?(packet.header.requestID, packet.header.imageID, imageData, activeEventContext)
 
             case .eventOpen, .eventAudioReady, .faceBatchEnd, .eventComplete:
                 let event = try EventPayload.decode(packet)
+                switch event {
+                case .open(let id, _):
+                    let owner = EventPayload.eventIDHex(id)
+                    let boot = String(owner.prefix(8))
+                    if eventBoot != boot { eventRequests.removeAll(); eventBoot = boot }
+                    if let previous = eventRequests[packet.header.requestID], previous != owner { throw ProtocolValidationError.wrongIdentifiers }
+                    if packet.header.requestID != 0 { eventRequests[packet.header.requestID] = owner }
+                case .faceBatchEnd(let id, let request, let expected, _, _, _, _, let status):
+                    onEventFace?(exportDeviceID, EventPayload.eventIDHex(id), ["request_id": String(request), "image_id": "0", "face_index": "-1", "face_count": String(expected), "status": String(describing: status).uppercased()])
+                default: break
+                }
                 imageInfo = String(describing: event)
             default:
                 statusText = "收到 \(packet.header.messageType)"
@@ -245,8 +302,10 @@ extension BLEManager: CBCentralManagerDelegate {
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        vadEnabled = nil; vadError = nil
         exportLink = nil; exportCoordinator = nil
         connectionGeneration = UUID()
+        eventRequests.removeAll(); activeEventContext = nil
         subscribed.removeAll()
         isConnected = true
         statusText = "已連線，探索服務中"
@@ -261,9 +320,11 @@ extension BLEManager: CBCentralManagerDelegate {
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         exportLink?.disconnected()
+        vadEnabled = nil; vadError = nil
         isConnected = false
         canCapture = false
         connectionGeneration = UUID()
+        eventRequests.removeAll(); activeEventContext = nil
         activeImage = nil
         assembler = ImageChunkAssembler()
         subscribed.removeAll()
@@ -282,7 +343,7 @@ extension BLEManager: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         exportLink?.didDiscoverServices(error: error)
-        if isExporting { return }
+        if isExporting || isChangingVAD { return }
         if let error {
             errorText = error.localizedDescription
             return
@@ -300,7 +361,7 @@ extension BLEManager: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         exportLink?.didDiscoverCharacteristics(for: service, error: error)
-        if isExporting { return }
+        if isExporting || isChangingVAD { return }
         if let error {
             errorText = error.localizedDescription
             return
