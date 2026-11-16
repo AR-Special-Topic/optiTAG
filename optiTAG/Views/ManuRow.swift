@@ -16,6 +16,7 @@ struct MenuRow: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
+        .contentShape(Rectangle())
         .background(isActive ? Color(hex: "#ede9fe") : Color.clear)
     }
 }

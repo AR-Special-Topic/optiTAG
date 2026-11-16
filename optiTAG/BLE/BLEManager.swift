@@ -1,3 +1,4 @@
+import EventPipeSDExport
 import Combine
 import CoreBluetooth
 import SwiftUI
@@ -11,7 +12,7 @@ struct DiscoveredDevice: Identifiable, Equatable {
     let peripheral: CBPeripheral
 }
 
-final class BLEManager: NSObject, ObservableObject {
+@MainActor final class BLEManager: NSObject, ObservableObject {
     @Published private(set) var statusText = "尚未掃描"
     @Published private(set) var errorText: String?
     @Published private(set) var devices: [DiscoveredDevice] = []
@@ -21,11 +22,65 @@ final class BLEManager: NSObject, ObservableObject {
     @Published private(set) var imageInfo: String?
     var onImageReceived: ((UInt32, UInt32, Data) -> Void)?
 
+    struct WiFiJoinPrompt {
+        let ssid: String
+        let password: String
+    }
+    @Published private(set) var wiFiJoinPrompt: WiFiJoinPrompt?
+    private var manualWiFiConfirmed = false
+
+    func confirmWiFiJoined() { manualWiFiConfirmed = true }
+
+    private func waitForManualWiFi(_ info: SDExportConnectionInfo) async throws {
+        manualWiFiConfirmed = false
+        wiFiJoinPrompt = WiFiJoinPrompt(ssid: info.ssid, password: info.passphrase)
+        defer { wiFiJoinPrompt = nil; manualWiFiConfirmed = false }
+        let deadline = Date().addingTimeInterval(90)
+        while !manualWiFiConfirmed {
+            try Task.checkCancellation()
+            guard Date() < deadline else { throw PersonError.message("手動加入 Wi-Fi 已逾時，請重新開始下載取得新的連線資訊") }
+            try await Task.sleep(nanoseconds: 250_000_000)
+        }
+        guard UIApplication.shared.applicationState == .active else { throw PersonError.message("請返回 optiTAG 後再繼續") }
+        // The SDK validates the authenticated device endpoint after this step.
+    }
+
+    private var exportLink: SDExportBLELink?
+    private var exportCoordinator: SDExportCoordinator?
+    @Published private(set) var isExporting = false
+    var exportDeviceID: String { peripheral?.identifier.uuidString ?? "unknown" }
+
+    @MainActor func downloadEvents() async throws -> SDExportResult {
+        guard !isExporting, let peripheral else { throw PersonError.message("請先連線裝置") }
+        isExporting = true
+        defer { isExporting = false }
+        if exportLink == nil {
+            let link = SDExportBLELink(peripheral: peripheral)
+            exportLink = link; exportCoordinator = SDExportCoordinator(link: link) { [weak self] info in
+                guard let self else { throw CancellationError() }
+                try await self.waitForManualWiFi(info)
+            }
+        }
+        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("SDExport").appendingPathComponent(peripheral.identifier.uuidString)
+        return try await exportCoordinator!.exportAll(to: directory)
+    }
+
+    @MainActor func deleteEventAudio(paths: [String]) async throws -> SDFileDeletionResult {
+        guard !isExporting, let coordinator = exportCoordinator else { throw PersonError.message("匯出工作尚未就緒") }
+        isExporting = true
+        defer { isExporting = false }
+        return try await coordinator.deleteFiles(paths: paths)
+    }
+
     private lazy var central = CBCentralManager(delegate: self, queue: nil)
     private var peripheral: CBPeripheral?
     private var controlCharacteristic: CBCharacteristic?
     private var resultCharacteristic: CBCharacteristic?
-    private let assembler = ImageChunkAssembler()
+    private var assembler = ImageChunkAssembler()
+    private(set) var connectionGeneration = UUID()
+    private var activeImage: (request: UInt32, image: UInt32)?
+    private var subscribed: Set<CBUUID> = []
     private var requestID: UInt32 = 1
     private var chunkCount = 0
     private var transferStartedAt: Date?
@@ -76,9 +131,10 @@ final class BLEManager: NSObject, ObservableObject {
     }
 
     func startCapture() {
-        guard let peripheral, let controlCharacteristic else { return }
+        guard !isExporting else { return }
+        guard canCapture, let peripheral, let controlCharacteristic else { return }
         let id = requestID
-        requestID = requestID == UInt32.max ? 1 : requestID + 1
+        requestID = requestID == 0x3fffffff ? 1 : requestID + 1
         chunkCount = 0
         receivedImage = nil
         imageInfo = "request \(id) 已送出"
@@ -101,6 +157,7 @@ final class BLEManager: NSObject, ObservableObject {
                 errorText = "ESP32-S3 回報錯誤"
             case .imageBegin:
                 try assembler.begin(packet)
+                activeImage = (packet.header.requestID, packet.header.imageID)
                 transferStartedAt = Date()
                 chunkCount = 0
                 statusText = "接收影像中"
@@ -115,7 +172,10 @@ final class BLEManager: NSObject, ObservableObject {
                 imageInfo = "request \(packet.header.requestID), image \(packet.header.imageID), \(imageData.count) bytes, \(chunkCount) chunks, \(Int(elapsed)) ms"
                 statusText = receivedImage == nil ? "收到影像但無法解碼" : "影像接收完成"
                 onImageReceived?(packet.header.requestID, packet.header.imageID, imageData)
-                sendUnknownResult(requestID: packet.header.requestID, imageID: packet.header.imageID)
+
+            case .eventOpen, .eventAudioReady, .faceBatchEnd, .eventComplete:
+                let event = try EventPayload.decode(packet)
+                imageInfo = String(describing: event)
             default:
                 statusText = "收到 \(packet.header.messageType)"
             }
@@ -124,18 +184,17 @@ final class BLEManager: NSObject, ObservableObject {
         }
     }
 
-    private func sendUnknownResult(requestID: UInt32, imageID: UInt32) {
-        guard let peripheral, let resultCharacteristic else { return }
-        let packet = PacketFactory.recognitionResult(
-            requestID: requestID,
-            imageID: imageID,
-            status: .unknown,
-            personID: "",
-            personName: "UNKNOWN",
-            similarity: 0,
-            processingTimeMs: 0
-        )
+    func sendRecognitionResult(_ result: RecognitionResult, generation: UUID) {
+        guard generation == connectionGeneration,
+              activeImage?.request == result.requestID, activeImage?.image == result.imageID,
+              let peripheral, let resultCharacteristic else { return }
+        let packet = result.encodedPacket()
+        guard packet.count <= peripheral.maximumWriteValueLength(for: .withResponse) else {
+            errorText = "BLE 寫入容量不足，無法傳送辨識結果"
+            return
+        }
         peripheral.writeValue(packet, for: resultCharacteristic, type: .withResponse)
+        activeImage = nil
     }
 
     private func bluetoothStateText(_ state: CBManagerState) -> String {
@@ -167,7 +226,7 @@ extension BLEManager: CBCentralManagerDelegate {
     ) {
         let localName = advertisementData[CBAdvertisementDataLocalNameKey] as? String
         let name = peripheral.name ?? localName ?? "未命名裝置"
-        guard name == BLEProtocol.deviceName || localName == BLEProtocol.deviceName else { return }
+
 
         let device = DiscoveredDevice(
             id: peripheral.identifier,
@@ -186,6 +245,9 @@ extension BLEManager: CBCentralManagerDelegate {
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        exportLink = nil; exportCoordinator = nil
+        connectionGeneration = UUID()
+        subscribed.removeAll()
         isConnected = true
         statusText = "已連線，探索服務中"
         peripheral.discoverServices([BLEProtocol.serviceUUID])
@@ -198,8 +260,13 @@ extension BLEManager: CBCentralManagerDelegate {
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        exportLink?.disconnected()
         isConnected = false
         canCapture = false
+        connectionGeneration = UUID()
+        activeImage = nil
+        assembler = ImageChunkAssembler()
+        subscribed.removeAll()
         controlCharacteristic = nil
         resultCharacteristic = nil
         statusText = "已斷線"
@@ -208,7 +275,14 @@ extension BLEManager: CBCentralManagerDelegate {
 }
 
 extension BLEManager: CBPeripheralDelegate {
+    func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
+        exportLink?.didModifyServices(invalidatedServices)
+        controlCharacteristic = nil; resultCharacteristic = nil; subscribed.removeAll(); canCapture = false
+    }
+
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        exportLink?.didDiscoverServices(error: error)
+        if isExporting { return }
         if let error {
             errorText = error.localizedDescription
             return
@@ -225,6 +299,8 @@ extension BLEManager: CBPeripheralDelegate {
     }
 
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        exportLink?.didDiscoverCharacteristics(for: service, error: error)
+        if isExporting { return }
         if let error {
             errorText = error.localizedDescription
             return
@@ -245,11 +321,31 @@ extension BLEManager: CBPeripheralDelegate {
             }
         }
 
-        canCapture = controlCharacteristic != nil
+        updateCaptureReadiness()
         statusText = canCapture ? "可拍照" : "等待 BLE characteristic"
     }
 
+    private func updateCaptureReadiness() {
+        canCapture = controlCharacteristic != nil && resultCharacteristic != nil &&
+            subscribed.contains(BLEProtocol.eventUUID) && subscribed.contains(BLEProtocol.imageDataUUID)
+    }
+
+    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
+        exportLink?.didUpdateNotificationState(for: characteristic, error: error)
+        if let error { errorText = error.localizedDescription; return }
+        if characteristic.isNotifying { subscribed.insert(characteristic.uuid) }
+        else { subscribed.remove(characteristic.uuid) }
+        updateCaptureReadiness()
+        statusText = canCapture ? "可拍照" : "等待 BLE 訂閱"
+    }
+
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        exportLink?.didWriteValue(for: characteristic, error: error)
+        if let error { errorText = "BLE 傳送失敗：\(error.localizedDescription)" }
+    }
+
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        exportLink?.didUpdateValue(for: characteristic, error: error)
         if let error {
             errorText = error.localizedDescription
             return
@@ -262,6 +358,10 @@ extension BLEManager: CBPeripheralDelegate {
             return
         }
 
+        if characteristic.uuid == EventPipeSDExport.BLEProtocol.sdExportInfoUUID { return }
+        // Export responses belong to the SDK, whose message enum extends v2.
+        if characteristic.uuid == BLEProtocol.eventUUID,
+           let packet = try? EventPipeSDExport.Packet.decode(data), packet.header.messageType.rawValue > 18 { return }
         handleNotification(data)
     }
 }
