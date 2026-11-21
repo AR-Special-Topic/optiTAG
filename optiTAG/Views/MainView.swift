@@ -1,65 +1,30 @@
 import SwiftUI
-import PhotosUI
 
 struct MainView: View {
-    @Binding var isMenuOpen: Bool
     @ObservedObject var viewModel: MainViewModel
 
 
-    @FocusState private var inputFocused: Bool
+    @State private var scanRequested = false
+
+    private var scanInProgress: Bool {
+        let ble = viewModel.ble
+        return !ble.isConnected && ble.errorText == nil &&
+            (scanRequested || ble.statusText.hasPrefix("連線中"))
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-
-            // 頂部導覽列
-            HStack {
-                Button {
-                    withAnimation(.easeInOut) { isMenuOpen.toggle() }
-                } label: {
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(hex: "#e5e7eb"), lineWidth: 0.5)
-                        .frame(width: 32, height: 32)
-                        .overlay(
-                            Image(systemName: "line.3.horizontal")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.primary)
-                        )
-                }
-
-                Spacer()
-
-                HStack(spacing: 0) {
-                    Text("opti").font(.headline).foregroundStyle(.primary)
-                    Text("TAG").font(.headline).foregroundStyle(Color(hex: "#7c3aed"))
-                }
-
-                Spacer()
-
-                Circle()
-                    .stroke(Color(hex: "#e5e7eb"), lineWidth: 0.5)
-                    .frame(width: 32, height: 32)
-                    .overlay(
-                        Image(systemName: "bell")
-                            .font(.system(size: 14))
-                            .foregroundStyle(.secondary)
-                    )
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
-
-            Divider()
-
             ScrollView {
                 VStack(spacing: 16) {
 
                     // ESP32 連線狀態卡片
                     HStack(spacing: 12) {
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(Color(hex: "#ede9fe"))
+                            .fill(OptiTagColors.navigation)
                             .frame(width: 44, height: 44)
                             .overlay(
                                 Image(systemName: "cpu")
-                                    .foregroundStyle(Color(hex: "#7c3aed"))
+                                    .foregroundStyle(OptiTagColors.accent)
                             )
                         VStack(alignment: .leading, spacing: 2) {
                             Text("ESP32")
@@ -74,8 +39,8 @@ struct MainView: View {
                                 .font(.caption).bold()
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
-                                .background(Color(hex: "#ede9fe"))
-                                .foregroundStyle(Color(hex: "#7c3aed"))
+                                .background(OptiTagColors.navigation)
+                                .foregroundStyle(OptiTagColors.accent)
                                 .clipShape(Capsule())
                             Text(viewModel.ble.imageInfo ?? "BLE")
                                 .font(.caption2)
@@ -83,11 +48,11 @@ struct MainView: View {
                         }
                     }
                     .padding(14)
-                    .background(Color.white)
+                    .background(OptiTagColors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color(hex: "#e5e7eb"), lineWidth: 0.5)
+                            .stroke(OptiTagColors.border, lineWidth: 0.5)
                     )
 
                     AutoRecordingCard(ble: viewModel.ble)
@@ -99,6 +64,12 @@ struct MainView: View {
                         if let image = viewModel.ble.receivedImage {
                             Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 180)
                         }
+                        if viewModel.ble.isConnected {
+                            Button("手動拍攝辨識", systemImage: "camera.viewfinder") {
+                                viewModel.ble.startCapture()
+                            }
+                            .disabled(!viewModel.ble.canCapture || viewModel.ble.isExporting || viewModel.ble.isChangingVAD)
+                        }
                         if let error = viewModel.ble.errorText {
                             Text(error).font(.caption).foregroundStyle(.red)
                         }
@@ -106,7 +77,7 @@ struct MainView: View {
                     }
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white)
+                    .background(OptiTagColors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
                     // 辨識紀錄
@@ -114,10 +85,6 @@ struct MainView: View {
                         HStack {
                             Text("辨識紀錄")
                                 .font(.subheadline).bold()
-                            Spacer()
-                            Text("查看全部")
-                                .font(.caption)
-                                .foregroundStyle(Color(hex: "#2563eb"))
                         }
                         .padding(.horizontal, 14)
                         .padding(.vertical, 12)
@@ -127,7 +94,7 @@ struct MainView: View {
                         if let databaseErrorMessage = viewModel.databaseErrorMessage {
                             Text(databaseErrorMessage)
                                 .font(.caption)
-                                .foregroundStyle(Color(hex: "#dc2626"))
+                                .foregroundStyle(.red)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(14)
                         } else if viewModel.logs.isEmpty {
@@ -173,11 +140,11 @@ struct MainView: View {
                             }
                         }
                     }
-                    .background(Color.white)
+                    .background(OptiTagColors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color(hex: "#e5e7eb"), lineWidth: 0.5)
+                            .stroke(OptiTagColors.border, lineWidth: 0.5)
                     )
                 }
                 .padding(16)
@@ -185,26 +152,46 @@ struct MainView: View {
 
             // 掃描按鈕
             Button {
-                viewModel.startBLEScanOrCapture()
+                guard !viewModel.ble.isConnected, !scanInProgress else { return }
+                scanRequested = true
+                viewModel.ble.connectFirstDiscoveredDevice()
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: "viewfinder")
-                    Text("開始掃描")
+                    Image(systemName: viewModel.ble.isConnected ? "checkmark.circle" : "dot.radiowaves.left.and.right")
+                    Text(viewModel.ble.isConnected ? "裝置已連線" : scanInProgress ? "正在搜尋" : "開始掃描")
                 }
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(Color(hex: "#7c3aed"))
+                .background(Color(hex: "#7c3aed").opacity(viewModel.ble.isConnected || scanInProgress ? 0.65 : 1))
                 .foregroundStyle(.white)
                 .clipShape(Capsule())
+                .contentShape(Capsule())
                 .padding(.horizontal, 16)
-                .padding(.bottom, 20)
+                .padding(.bottom, 8)
             }
+            .buttonStyle(.plain)
+            .disabled(viewModel.ble.isConnected || scanInProgress)
         }
-        .background(Color(hex: "#f8f7ff"))
+        .background(OptiTagColors.background)
         .onAppear { viewModel.refreshEnrollmentCount(); viewModel.loadRecentLogs() }
-        .scrollDismissesKeyboard(.interactively)
-        .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("完成") { inputFocused = false } } }
+        .onChange(of: viewModel.ble.devices.count) { _, count in
+            guard scanRequested, count > 0, !viewModel.ble.isConnected,
+                  !viewModel.ble.statusText.hasPrefix("連線中") else { return }
+            viewModel.ble.connectFirstDiscoveredDevice()
+        }
+        .onChange(of: viewModel.ble.isConnected) { _, connected in
+            if connected { scanRequested = false }
+        }
+        .onChange(of: viewModel.ble.errorText) { _, error in
+            if error != nil { scanRequested = false }
+        }
+        .task(id: scanRequested) {
+            guard scanRequested else { return }
+            do { try await Task.sleep(for: .seconds(12)) }
+            catch { return }
+            scanRequested = false
+        }
 
     }
 
@@ -222,35 +209,35 @@ struct MainView: View {
 
         switch log.tag {
         case "朋友":
-            return Color(hex: "#2563eb")
+            return OptiTagColors.adaptive(light: 0x2563eb, dark: 0xa7c5ff)
         default:
-            return Color(hex: "#7c3aed")
+            return OptiTagColors.accent
         }
     }
 
     private func backgroundColor(for log: RecognitionLog) -> Color {
         if log.isUnknown {
-            return Color(hex: "#f3f4f6")
+            return OptiTagColors.card
         }
 
         switch log.tag {
         case "朋友":
-            return Color(hex: "#dbeafe")
+            return OptiTagColors.adaptive(light: 0xdbeafe, dark: 0x243655)
         default:
-            return Color(hex: "#ede9fe")
+            return OptiTagColors.navigation
         }
     }
 
     private func tagBackgroundColor(for log: RecognitionLog) -> Color {
         if log.isUnknown {
-            return Color(hex: "#fee2e2")
+            return OptiTagColors.adaptive(light: 0xfee2e2, dark: 0x492732)
         }
 
         switch log.tag {
         case "同學", "朋友":
-            return Color(hex: "#dbeafe")
+            return OptiTagColors.adaptive(light: 0xdbeafe, dark: 0x243655)
         default:
-            return Color(hex: "#ede9fe")
+            return OptiTagColors.navigation
         }
     }
 }
@@ -269,7 +256,7 @@ private struct AutoRecordingCard: View {
                     .font(.subheadline.bold())
             }
             .toggleStyle(.switch)
-            .tint(Color(hex: "#7c3aed"))
+            .tint(OptiTagColors.accent)
             .disabled(!ble.canCapture || ble.isExporting || ble.isChangingVAD)
             .accessibilityValue(ble.vadEnabled.map { $0 ? "已開啟" : "已關閉" } ?? "尚未確認")
 
@@ -286,11 +273,11 @@ private struct AutoRecordingCard: View {
             }
         }
         .padding(14)
-        .background(Color.white)
+        .background(OptiTagColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color(hex: "#e5e7eb"), lineWidth: 0.5)
+                .stroke(OptiTagColors.border, lineWidth: 0.5)
         )
     }
 }

@@ -27,3 +27,8 @@ firebase-debug*.log
 
 # Download model weights separately; keep provenance/checksums in Git
 /buffalo_s/*.onnx
+
+# Generated dependencies and downloaded Firebase configuration
+/Pods/
+/functions/node_modules/
+/GoogleService-Info.plist

@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1247AFEEA5E850966BB4CB7F /* Pods_optiTAG.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 575CA14D794FF724C0FA23ED /* Pods_optiTAG.framework */; };
 		1C102E6B30A3A41500FB57B9 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1C102E6A30A3A41500FB57B9 /* GoogleService-Info.plist */; };
 		1CDD247E307E292500049898 /* BLEProtocolv2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CDD247D307E291800049898 /* BLEProtocolv2.swift */; };
 		A10000000000000000000001 /* buffalo_s/det_500m.onnx in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* buffalo_s/det_500m.onnx */; };
-		A10000000000000000000002 /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000003 /* onnxruntime */; };
 		A10000000000000000000008 /* buffalo_s/w600k_mbf.onnx in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000007 /* buffalo_s/w600k_mbf.onnx */; };
 		B20000000000000000000001 /* EventPipeSDExport in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000002 /* EventPipeSDExport */; };
 		B20000000000000000000003 /* FirebaseAILogic in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000004 /* FirebaseAILogic */; };
@@ -35,9 +35,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		01D1290408109BF3799BE0E6 /* Pods-optiTAG.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-optiTAG.release.xcconfig"; path = "Target Support Files/Pods-optiTAG/Pods-optiTAG.release.xcconfig"; sourceTree = "<group>"; };
+		05FF527BF3F5525E1727F4EB /* Pods-optiTAG.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-optiTAG.debug.xcconfig"; path = "Target Support Files/Pods-optiTAG/Pods-optiTAG.debug.xcconfig"; sourceTree = "<group>"; };
 		1C102E6A30A3A41500FB57B9 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		1CDD247C307E28AA00049898 /* buffalo_s */ = {isa = PBXFileReference; lastKnownFileType = folder; path = buffalo_s; sourceTree = "<group>"; };
 		1CDD247D307E291800049898 /* BLEProtocolv2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEProtocolv2.swift; sourceTree = "<group>"; };
+		575CA14D794FF724C0FA23ED /* Pods_optiTAG.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_optiTAG.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000006 /* buffalo_s/det_500m.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = buffalo_s/det_500m.onnx; sourceTree = SOURCE_ROOT; };
 		A10000000000000000000007 /* buffalo_s/w600k_mbf.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = buffalo_s/w600k_mbf.onnx; sourceTree = SOURCE_ROOT; };
 		C03712312FAE024600CD97D7 /* Person.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Person.swift; sourceTree = "<group>"; };
@@ -76,13 +79,21 @@
 				B20000000000000000000008 /* FirebaseAppCheck in Frameworks */,
 				B20000000000000000000007 /* FirebaseFunctions in Frameworks */,
 				B20000000000000000000006 /* FirebaseAuth in Frameworks */,
-				A10000000000000000000002 /* onnxruntime in Frameworks */,
+				1247AFEEA5E850966BB4CB7F /* Pods_optiTAG.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		18FE02B0F69F3693D04CDEA2 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				575CA14D794FF724C0FA23ED /* Pods_optiTAG.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		1C5156C430A34203005731DB /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
@@ -90,6 +101,15 @@
 				A10000000000000000000007 /* buffalo_s/w600k_mbf.onnx */,
 			);
 			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		6C48EDDB5F402F5DD0F3036E /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				05FF527BF3F5525E1727F4EB /* Pods-optiTAG.debug.xcconfig */,
+				01D1290408109BF3799BE0E6 /* Pods-optiTAG.release.xcconfig */,
+			);
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		C03712302FAE023300CD97D7 /* Models */ = {
@@ -134,6 +154,8 @@
 				C077651B2FADD45800BD8F6F /* Products */,
 				1CDD247C307E28AA00049898 /* buffalo_s */,
 				1C5156C430A34203005731DB /* Recovered References */,
+				6C48EDDB5F402F5DD0F3036E /* Pods */,
+				18FE02B0F69F3693D04CDEA2 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -182,6 +204,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C07765252FADD45900BD8F6F /* Build configuration list for PBXNativeTarget "optiTAG" */;
 			buildPhases = (
+				21E5C84B1B8F91F6963F57EE /* [CP] Check Pods Manifest.lock */,
 				C07765162FADD45800BD8F6F /* Sources */,
 				C07765172FADD45800BD8F6F /* Frameworks */,
 				C07765182FADD45800BD8F6F /* Resources */,
@@ -200,7 +223,6 @@
 				B2000000000000000000000B /* FirebaseAppCheck */,
 				B2000000000000000000000A /* FirebaseFunctions */,
 				B20000000000000000000009 /* FirebaseAuth */,
-				A10000000000000000000003 /* onnxruntime */,
 			);
 			productName = optiTAG;
 			productReference = C077651A2FADD45800BD8F6F /* optiTAG.app */;
@@ -232,7 +254,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				B20000000000000000000005 /* XCLocalSwiftPackageReference "Vendor/EventPipeSDExport" */,
-				A10000000000000000000005 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */,
 				1C102E6930A3A1E400FB57B9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -258,6 +279,31 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		21E5C84B1B8F91F6963F57EE /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-optiTAG-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C07765162FADD45800BD8F6F /* Sources */ = {
@@ -410,12 +456,13 @@
 		};
 		C07765262FADD45900BD8F6F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 05FF527BF3F5525E1727F4EB /* Pods-optiTAG.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SXGGQ7VCS5;
+				DEVELOPMENT_TEAM = 6H4QVBVHX6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = optiTAG/Info.plist;
@@ -434,7 +481,10 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = "-lsqlite3";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.marypoppins.optitag;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -449,13 +499,14 @@
 		};
 		C07765272FADD45900BD8F6F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 01D1290408109BF3799BE0E6 /* Pods-optiTAG.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = optiTAG/optiTAG.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SXGGQ7VCS5;
+				DEVELOPMENT_TEAM = 6H4QVBVHX6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = optiTAG/Info.plist;
@@ -474,7 +525,10 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = "-lsqlite3";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.marypoppins.optitag;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -526,22 +580,9 @@
 				minimumVersion = 13.1.1;
 			};
 		};
-		A10000000000000000000005 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/microsoft/onnxruntime-swift-package-manager";
-			requirement = {
-				kind = exactVersion;
-				version = 1.24.2;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A10000000000000000000003 /* onnxruntime */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A10000000000000000000005 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */;
-			productName = onnxruntime;
-		};
 		B20000000000000000000002 /* EventPipeSDExport */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B20000000000000000000005 /* XCLocalSwiftPackageReference "Vendor/EventPipeSDExport" */;

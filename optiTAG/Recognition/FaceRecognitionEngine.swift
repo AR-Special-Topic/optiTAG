@@ -1,6 +1,6 @@
 import Foundation
 import UIKit
-import OnnxRuntimeBindings
+import onnxruntime_objc
 
 // One engine lives on the recognition queue; sessions never run on the UI thread.
 final class FaceRecognitionEngine {

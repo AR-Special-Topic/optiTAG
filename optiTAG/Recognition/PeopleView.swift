@@ -3,6 +3,8 @@ import PhotosUI
 
 struct PeopleView: View {
     @ObservedObject var viewModel: MainViewModel
+    @State private var showsEnrollment = false
+    @State private var deletingPerson: Person?
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var enrollmentData: Data?
     @State private var personName = ""
@@ -12,7 +14,49 @@ struct PeopleView: View {
     @State private var error: String?
     var body: some View {
         List {
-            Section("登錄新人物") {
+            if let error { Text(error).foregroundStyle(.red) }
+            if people.isEmpty { Text("尚未新增人物").foregroundStyle(.secondary) }
+            ForEach(people) { person in
+                NavigationLink { PersonEditor(person: person) } label: {
+                    VStack(alignment: .leading) { Text(person.name); Text(person.tag).font(.caption).foregroundStyle(.secondary) }
+                }
+                .contextMenu {
+                    Button("刪除人物", systemImage: "trash", role: .destructive) {
+                        deletingPerson = person
+                    }
+                }
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            Button {
+                showsEnrollment = true
+            } label: {
+                Label("新增人物", systemImage: "person.badge.plus")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .alert("刪除人物？", isPresented: Binding(
+            get: { deletingPerson != nil },
+            set: { if !$0 { deletingPerson = nil } }
+        ), presenting: deletingPerson) { person in
+            Button("取消", role: .cancel) {}
+            Button("刪除", role: .destructive) {
+                do {
+                    try OptiTagDatabase.shared.deletePerson(id: person.id)
+                    reload()
+                } catch { self.error = error.localizedDescription }
+            }
+        } message: { person in
+            Text("將刪除「\(person.name)」及其登錄特徵。")
+        }
+        .onAppear(perform: reload)
+        .sheet(isPresented: $showsEnrollment, onDismiss: resetEnrollment) {
+            NavigationStack {
+                Form {
+                    Section("登錄新人物") {
                         TextField("人物姓名", text: $personName).textFieldStyle(.roundedBorder).focused($inputFocused).submitLabel(.done).onSubmit { inputFocused = false }
                         TextField("標籤（例如朋友、同學）", text: $personTag).textFieldStyle(.roundedBorder).focused($inputFocused).submitLabel(.done).onSubmit { inputFocused = false }
                         PhotosPicker(selection: $selectedPhoto, matching: .images) {
@@ -27,23 +71,27 @@ struct PeopleView: View {
                             if let data = enrollmentData { viewModel.enroll(data: data, name: personName, tag: personTag) }
                         }
                         .disabled(enrollmentData == nil || personName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isEnrolling)
-                Text(viewModel.recognitionStatus).font(.caption)
-            }
-            if let error { Text(error).foregroundStyle(.red) }
-            if people.isEmpty { Text("選取照片以新增人物") }
-            ForEach(people) { person in
-                NavigationLink { PersonEditor(person: person) } label: {
-                    VStack(alignment: .leading) { Text(person.name); Text(person.tag).font(.caption).foregroundStyle(.secondary) }
+                        Text(viewModel.recognitionStatus).font(.caption)
+                    }
                 }
-            }.onDelete { indices in
-                do { for index in indices { try OptiTagDatabase.shared.deletePerson(id: people[index].id) }; reload() }
-                catch { self.error = error.localizedDescription }
+                .navigationTitle("新增人物")
+                .navigationBarTitleDisplayMode(.inline)
+                .scrollDismissesKeyboard(.interactively)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("取消") { showsEnrollment = false }.disabled(viewModel.isEnrolling)
+                    }
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("完成") { inputFocused = false }
+                    }
+                }
             }
-        }.navigationTitle("人物資料庫").onAppear(perform: reload)
-        .scrollDismissesKeyboard(.interactively)
-        .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("完成") { inputFocused = false } } }
+            .interactiveDismissDisabled(viewModel.isEnrolling)
+        }
         .onChange(of: viewModel.enrollmentRevision) { _, _ in
-            reload(); selectedPhoto = nil; enrollmentData = nil; personName = ""; personTag = ""
+            reload()
+            showsEnrollment = false
         }
         .task(id: selectedPhoto) {
             enrollmentData = nil
@@ -52,8 +100,20 @@ struct PeopleView: View {
             catch { viewModel.databaseErrorMessage = "照片讀取失敗：\(error.localizedDescription)" }
         }
     }
+    private func resetEnrollment() {
+        selectedPhoto = nil
+        enrollmentData = nil
+        personName = ""
+        personTag = ""
+    }
+
     private func reload() {
-        do { people = try OptiTagDatabase.shared.fetchPersons() } catch { self.error = error.localizedDescription }
+        do {
+            people = try OptiTagDatabase.shared.fetchPersons().sorted {
+                $0.createdAt == $1.createdAt ? $0.id > $1.id : $0.createdAt > $1.createdAt
+            }
+            error = nil
+        } catch { self.error = error.localizedDescription }
     }
 }
 

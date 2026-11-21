@@ -32,8 +32,10 @@ enum EventCSV {
         guard !quoted else { throw PersonError.message("CSV 引號未結束") }
         if !field.isEmpty || !row.isEmpty || closed { row.append(field); rows.append(row) }
         guard let header = rows.first, !header.contains(""), Set(header).count == header.count else { throw PersonError.message("CSV header 無效") }
-        return try rows.dropFirst().filter { $0 != [""] }.map { values in
-            guard values.count == header.count else { throw PersonError.message("CSV 欄位數不符") }
+        return try rows.enumerated().dropFirst().filter { $0.element != [""] }.map { index, values in
+            guard values.count == header.count else {
+                throw PersonError.message("CSV 第 \(index + 1) 筆紀錄欄位數不符（預期 \(header.count) 欄，實際 \(values.count) 欄）")
+            }
             return Dictionary(uniqueKeysWithValues: zip(header, values))
         }
     }

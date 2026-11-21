@@ -10,6 +10,28 @@ public enum SDExportClientError: Error {
     case partialDeletion(deletedPaths: [String], reason: String)
 }
 
+extension SDExportClientError: LocalizedError {
+    public var errorDescription: String? {
+        guard case let .device(code) = self else { return nil }
+
+        let reason: String
+        switch ErrorCode(rawValue: code) {
+        case .sdUnavailable: reason = "裝置無法存取 SD 卡"
+        case .exportBusy: reason = "裝置正在執行另一項匯出"
+        case .quiesceTimeout: reason = "等待裝置暫停錄音逾時"
+        case .wifiStartFailed: reason = "裝置無法啟動 Wi-Fi 熱點"
+        case .sdIo: reason = "裝置讀寫 SD 卡失敗"
+        case .invalidSession: reason = "裝置匯出工作階段無效"
+        case .audioResumeFailed: reason = "裝置無法恢復錄音"
+        case .pathUnsupported: reason = "SD 卡上有裝置無法匯出的檔名或路徑"
+        case .exportExpired: reason = "裝置匯出工作階段已逾時"
+        default: reason = "裝置回報匯出失敗"
+        }
+        return "\(reason)（ESP32 錯誤碼 \(code)）"
+    }
+}
+
+
 /// This value contains session credentials. Keep it in memory; never log it.
 public struct SDExportConnectionInfo: Decodable, Sendable {
     public let formatVersion: Int

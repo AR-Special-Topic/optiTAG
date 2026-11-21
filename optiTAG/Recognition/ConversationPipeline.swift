@@ -38,6 +38,11 @@ import FirebaseAppCheck
             summaries = try repository.summaries()
         } catch { status = "紀錄讀取失敗：\(error.localizedDescription)" }
     }
+    func searchResults(for query: String, limit: Int) throws -> [ConversationSummary] {
+        guard let repository else { throw PersonError.message("對話資料庫未就緒") }
+        return try repository.summaries(search: query, limit: limit)
+    }
+
     func search(_ query: String, limit: Int = 100) {
         do { summaries = try repository?.summaries(search: query, limit: limit) ?? [] }
         catch { status = error.localizedDescription }
@@ -154,6 +159,15 @@ import FirebaseAppCheck
         }
     }
 
+    private func readExportCSV(_ name: String, in directory: URL) throws -> [[String: String]] {
+        do {
+            let source = try String(contentsOf: directory.appendingPathComponent(name), encoding: .utf8)
+            return try EventCSV.rows(source)
+        } catch {
+            throw PersonError.message("\(name)：\(error.localizedDescription)")
+        }
+    }
+
     private func importExport(directory: URL, manifest: URL, deviceID: String) throws {
         importWarnings = []
         guard let repository else { throw PersonError.message("對話資料庫未就緒") }
@@ -177,10 +191,10 @@ import FirebaseAppCheck
             if !absent.isEmpty { try repository.save(events: absent, summaries: []) }
         }
         guard paths.contains("audio_events.csv") else { throw PersonError.message("下載清單缺少 audio_events.csv") }
-        let rows = try EventCSV.rows(String(contentsOf: directory.appendingPathComponent("audio_events.csv"), encoding: .utf8))
+        let rows = try readExportCSV("audio_events.csv", in: directory)
         guard paths.contains("event_lifecycle.csv"), paths.contains("face_associations.csv") else { throw PersonError.message("下載清單缺少事件或人臉 metadata") }
-        let lifecycle = try EventCSV.rows(String(contentsOf: directory.appendingPathComponent("event_lifecycle.csv"), encoding: .utf8))
-        let faces = try EventCSV.rows(String(contentsOf: directory.appendingPathComponent("face_associations.csv"), encoding: .utf8))
+        let lifecycle = try readExportCSV("event_lifecycle.csv", in: directory)
+        let faces = try readExportCSV("face_associations.csv", in: directory)
         let transitionsByID = Dictionary(grouping: lifecycle, by: { $0["event_id"] ?? "" })
         let facesByID = Dictionary(grouping: faces, by: { $0["event_id"] ?? "" })
         try EventMetadata.validateFaces(faces)
