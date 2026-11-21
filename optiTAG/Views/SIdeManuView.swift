@@ -29,7 +29,7 @@ struct SideMenuView: View {
                     .onTapGesture { select("home") }
                 MenuRow(icon: "cylinder", title: "資料庫", isActive: selectedTab == "database")
                     .onTapGesture { select("database") }
-                MenuRow(icon: "clock", title: "紀錄", isActive: selectedTab == "log")
+                MenuRow(icon: "clock", title: "對話紀錄", isActive: selectedTab == "log")
                     .onTapGesture { select("log") }
             }
 

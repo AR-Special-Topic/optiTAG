@@ -7,6 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1247AFEEA5E850966BB4CB7F /* Pods_optiTAG.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 575CA14D794FF724C0FA23ED /* Pods_optiTAG.framework */; };
+		1C102E6B30A3A41500FB57B9 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1C102E6A30A3A41500FB57B9 /* GoogleService-Info.plist */; };
+		1CDD247E307E292500049898 /* BLEProtocolv2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CDD247D307E291800049898 /* BLEProtocolv2.swift */; };
+		A10000000000000000000001 /* buffalo_s/det_500m.onnx in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* buffalo_s/det_500m.onnx */; };
+		A10000000000000000000008 /* buffalo_s/w600k_mbf.onnx in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000007 /* buffalo_s/w600k_mbf.onnx */; };
+		B20000000000000000000001 /* EventPipeSDExport in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000002 /* EventPipeSDExport */; };
+		B20000000000000000000003 /* FirebaseAILogic in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000004 /* FirebaseAILogic */; };
+		B20000000000000000000006 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000009 /* FirebaseAuth */; };
+		B20000000000000000000007 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = B2000000000000000000000A /* FirebaseFunctions */; };
+		B20000000000000000000008 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = B2000000000000000000000B /* FirebaseAppCheck */; };
 		C03712322FAE024600CD97D7 /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03712312FAE024600CD97D7 /* Person.swift */; };
 		C03712342FAE024600CD97D7 /* RecognitionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03712332FAE024600CD97D7 /* RecognitionLog.swift */; };
 		C03712362FAE024600CD97D7 /* OptiTagDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03712352FAE024600CD97D7 /* OptiTagDatabase.swift */; };
@@ -25,6 +35,14 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		01D1290408109BF3799BE0E6 /* Pods-optiTAG.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-optiTAG.release.xcconfig"; path = "Target Support Files/Pods-optiTAG/Pods-optiTAG.release.xcconfig"; sourceTree = "<group>"; };
+		05FF527BF3F5525E1727F4EB /* Pods-optiTAG.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-optiTAG.debug.xcconfig"; path = "Target Support Files/Pods-optiTAG/Pods-optiTAG.debug.xcconfig"; sourceTree = "<group>"; };
+		1C102E6A30A3A41500FB57B9 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		1CDD247C307E28AA00049898 /* buffalo_s */ = {isa = PBXFileReference; lastKnownFileType = folder; path = buffalo_s; sourceTree = "<group>"; };
+		1CDD247D307E291800049898 /* BLEProtocolv2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEProtocolv2.swift; sourceTree = "<group>"; };
+		575CA14D794FF724C0FA23ED /* Pods_optiTAG.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_optiTAG.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000006 /* buffalo_s/det_500m.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = buffalo_s/det_500m.onnx; sourceTree = SOURCE_ROOT; };
+		A10000000000000000000007 /* buffalo_s/w600k_mbf.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = buffalo_s/w600k_mbf.onnx; sourceTree = SOURCE_ROOT; };
 		C03712312FAE024600CD97D7 /* Person.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Person.swift; sourceTree = "<group>"; };
 		C03712332FAE024600CD97D7 /* RecognitionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognitionLog.swift; sourceTree = "<group>"; };
 		C03712352FAE024600CD97D7 /* OptiTagDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptiTagDatabase.swift; sourceTree = "<group>"; };
@@ -43,17 +61,57 @@
 		C07CAEB72FAF2ED300701FF3 /* ColorHex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorHex.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A10000000000000000000004 /* Recognition */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Recognition;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		C07765172FADD45800BD8F6F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B20000000000000000000001 /* EventPipeSDExport in Frameworks */,
+				B20000000000000000000003 /* FirebaseAILogic in Frameworks */,
+				B20000000000000000000008 /* FirebaseAppCheck in Frameworks */,
+				B20000000000000000000007 /* FirebaseFunctions in Frameworks */,
+				B20000000000000000000006 /* FirebaseAuth in Frameworks */,
+				1247AFEEA5E850966BB4CB7F /* Pods_optiTAG.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		18FE02B0F69F3693D04CDEA2 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				575CA14D794FF724C0FA23ED /* Pods_optiTAG.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		1C5156C430A34203005731DB /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000006 /* buffalo_s/det_500m.onnx */,
+				A10000000000000000000007 /* buffalo_s/w600k_mbf.onnx */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		6C48EDDB5F402F5DD0F3036E /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				05FF527BF3F5525E1727F4EB /* Pods-optiTAG.debug.xcconfig */,
+				01D1290408109BF3799BE0E6 /* Pods-optiTAG.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		C03712302FAE023300CD97D7 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -82,6 +140,7 @@
 		C03712442FAE024600CD97D7 /* BLE */ = {
 			isa = PBXGroup;
 			children = (
+				1CDD247D307E291800049898 /* BLEProtocolv2.swift */,
 				C03712402FAE024600CD97D7 /* BLEProtocol.swift */,
 				C03712412FAE024600CD97D7 /* BLEManager.swift */,
 			);
@@ -93,6 +152,10 @@
 			children = (
 				C07CAEAA2FAF2C5200701FF3 /* optiTAG */,
 				C077651B2FADD45800BD8F6F /* Products */,
+				1CDD247C307E28AA00049898 /* buffalo_s */,
+				1C5156C430A34203005731DB /* Recovered References */,
+				6C48EDDB5F402F5DD0F3036E /* Pods */,
+				18FE02B0F69F3693D04CDEA2 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -110,6 +173,7 @@
 				C07CAEB02FAF2C5D00701FF3 /* Views */,
 				C03712442FAE024600CD97D7 /* BLE */,
 				C037123A2FAE024600CD97D7 /* ViewModels */,
+				A10000000000000000000004 /* Recognition */,
 				C03712392FAE024600CD97D7 /* Database */,
 				C07CAEA52FAF2C5200701FF3 /* Assets.xcassets */,
 				C07CAEA62FAF2C5200701FF3 /* CameraPreviewView.swift */,
@@ -117,6 +181,7 @@
 				C07CAEA82FAF2C5200701FF3 /* optiTAGApp.swift */,
 				C07CAEA92FAF2C5200701FF3 /* RcognitionResultView.swift */,
 				C03712302FAE023300CD97D7 /* Models */,
+				1C102E6A30A3A41500FB57B9 /* GoogleService-Info.plist */,
 			);
 			path = optiTAG;
 			sourceTree = "<group>";
@@ -139,6 +204,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C07765252FADD45900BD8F6F /* Build configuration list for PBXNativeTarget "optiTAG" */;
 			buildPhases = (
+				21E5C84B1B8F91F6963F57EE /* [CP] Check Pods Manifest.lock */,
 				C07765162FADD45800BD8F6F /* Sources */,
 				C07765172FADD45800BD8F6F /* Frameworks */,
 				C07765182FADD45800BD8F6F /* Resources */,
@@ -147,8 +213,16 @@
 			);
 			dependencies = (
 			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000004 /* Recognition */,
+			);
 			name = optiTAG;
 			packageProductDependencies = (
+				B20000000000000000000002 /* EventPipeSDExport */,
+				B20000000000000000000004 /* FirebaseAILogic */,
+				B2000000000000000000000B /* FirebaseAppCheck */,
+				B2000000000000000000000A /* FirebaseFunctions */,
+				B20000000000000000000009 /* FirebaseAuth */,
 			);
 			productName = optiTAG;
 			productReference = C077651A2FADD45800BD8F6F /* optiTAG.app */;
@@ -162,7 +236,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2610;
-				LastUpgradeCheck = 2610;
+				LastUpgradeCheck = 2660;
 				TargetAttributes = {
 					C07765192FADD45800BD8F6F = {
 						CreatedOnToolsVersion = 26.1;
@@ -178,6 +252,10 @@
 			);
 			mainGroup = C07765112FADD45700BD8F6F;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				B20000000000000000000005 /* XCLocalSwiftPackageReference "Vendor/EventPipeSDExport" */,
+				1C102E6930A3A1E400FB57B9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C077651B2FADD45800BD8F6F /* Products */;
 			projectDirPath = "";
@@ -194,10 +272,38 @@
 			buildActionMask = 2147483647;
 			files = (
 				C07CAEAF2FAF2C5200701FF3 /* Assets.xcassets in Resources */,
+				1C102E6B30A3A41500FB57B9 /* GoogleService-Info.plist in Resources */,
+				A10000000000000000000001 /* buffalo_s/det_500m.onnx in Resources */,
+				A10000000000000000000008 /* buffalo_s/w600k_mbf.onnx in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		21E5C84B1B8F91F6963F57EE /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-optiTAG-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C07765162FADD45800BD8F6F /* Sources */ = {
@@ -210,6 +316,7 @@
 				C07CAEB82FAF2EDC00701FF3 /* ColorHex.swift in Sources */,
 				C03712362FAE024600CD97D7 /* OptiTagDatabase.swift in Sources */,
 				C03712422FAE024600CD97D7 /* BLEProtocol.swift in Sources */,
+				1CDD247E307E292500049898 /* BLEProtocolv2.swift in Sources */,
 				C07CAEAC2FAF2C5200701FF3 /* ContentView.swift in Sources */,
 				C07CAEAD2FAF2C5200701FF3 /* optiTAGApp.swift in Sources */,
 				C03712382FAE024600CD97D7 /* MainViewModel.swift in Sources */,
@@ -259,6 +366,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6H4QVBVHX6;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -282,6 +390,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -322,6 +431,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6H4QVBVHX6;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -338,6 +448,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -345,6 +456,7 @@
 		};
 		C07765262FADD45900BD8F6F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 05FF527BF3F5525E1727F4EB /* Pods-optiTAG.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -353,24 +465,31 @@
 				DEVELOPMENT_TEAM = 6H4QVBVHX6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = optiTAG/Info.plist;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "optiTAG 需要透過 BLE 連線 ESP32-S3，接收裁切後的人臉影像。";
+				INFOPLIST_KEY_NSCameraUsageDescription = "optiTAG 需要使用相機進行人物掃描與辨識。";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "從 optiTAG 裝置下載錄音與事件";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "將錄音轉為可搜尋的對話紀錄";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "optiTAG 需要透過 BLE 連線 ESP32-S3，接收裁切後的人臉影像。";
-				INFOPLIST_KEY_NSCameraUsageDescription = "optiTAG 需要使用相機進行人物掃描與辨識。";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = "-lsqlite3";
-				PRODUCT_BUNDLE_IDENTIFIER = com.paulweng.optiTAG;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.marypoppins.optitag;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -380,32 +499,41 @@
 		};
 		C07765272FADD45900BD8F6F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 01D1290408109BF3799BE0E6 /* Pods-optiTAG.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = optiTAG/optiTAG.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6H4QVBVHX6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = optiTAG/Info.plist;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "optiTAG 需要透過 BLE 連線 ESP32-S3，接收裁切後的人臉影像。";
+				INFOPLIST_KEY_NSCameraUsageDescription = "optiTAG 需要使用相機進行人物掃描與辨識。";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "從 optiTAG 裝置下載錄音與事件";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "將錄音轉為可搜尋的對話紀錄";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "optiTAG 需要透過 BLE 連線 ESP32-S3，接收裁切後的人臉影像。";
-				INFOPLIST_KEY_NSCameraUsageDescription = "optiTAG 需要使用相機進行人物掃描與辨識。";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = "-lsqlite3";
-				PRODUCT_BUNDLE_IDENTIFIER = com.paulweng.optiTAG;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.marypoppins.optitag;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -435,6 +563,52 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		B20000000000000000000005 /* XCLocalSwiftPackageReference "Vendor/EventPipeSDExport" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Vendor/EventPipeSDExport;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1C102E6930A3A1E400FB57B9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.1.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B20000000000000000000002 /* EventPipeSDExport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B20000000000000000000005 /* XCLocalSwiftPackageReference "Vendor/EventPipeSDExport" */;
+			productName = EventPipeSDExport;
+		};
+		B20000000000000000000004 /* FirebaseAILogic */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1C102E6930A3A1E400FB57B9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAILogic;
+		};
+		B20000000000000000000009 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1C102E6930A3A1E400FB57B9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		B2000000000000000000000A /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1C102E6930A3A1E400FB57B9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
+		B2000000000000000000000B /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1C102E6930A3A1E400FB57B9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = C07765122FADD45800BD8F6F /* Project object */;
 }
